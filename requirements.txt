@@ -1,0 +1,5 @@
+plotly~=4.14.3
+dash~=1.19.0
+networkx~=2.5
+nltk~=3.5
+nameparser~=1.0.6

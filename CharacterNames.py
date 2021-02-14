@@ -9,7 +9,7 @@ import networkx as nx
 # TODO Names with size 1 or less are IGNORED now!
 
 
-def get_human_names(text):
+def get_character_names(text):
     tokens = nltk.tokenize.word_tokenize(text)
     pos = nltk.pos_tag(tokens)
     sentt = nltk.ne_chunk(pos, binary=False)
@@ -29,15 +29,14 @@ def get_human_names(text):
     return person_list
 
 
-def test_A_Christmas_Carol_Names():
-    book_address = "./Data/Gutenberg/txt/Charles Dickens___A Christmas Carol.txt"
+def print_character_names(book_address):
     book_read = open(book_address, "r")
     # whole book as a string
     lis = book_read.readlines()
     stri = ""
     for i in range(len(lis)):
         stri = stri + lis[i]
-    names = get_human_names(stri)
+    names = get_character_names(stri)
 
     print("LAST, FIRST")
     for name in names:
@@ -45,33 +44,32 @@ def test_A_Christmas_Carol_Names():
         print(last_first)
 
 
-def test_A_Christmas_Carol_Graph():
-    book_address = "./Data/Gutenberg/txt/Charles Dickens___A Christmas Carol.txt"
+def create_character_graph(book_address):
     book_read = open(book_address, "r")
     # whole book as a string
     stri = ""
-    people = []
+    names = []
+    counts = []
     graph = nx.Graph()
     for li, line in enumerate(book_read.readlines()):
         stri = stri + line
         if li % 30 == 1:
-            names = get_human_names(stri)
-            for name in names:
-                if name not in people:
-                    people.append(name)
-                    graph.add_node(len(people))
-            for i in range(len(names)):
-                for j in range(i + 1, len(names)):
-                    ind_i = people.index(names[i])
-                    ind_j = people.index(names[j])
+            new_names = get_character_names(stri)
+            for name in new_names:
+                if name not in names:
+                    names.append(name)
+                    counts.append(1)
+                    graph.add_node(names.index(name))
+                else:
+                    counts[names.index(name)] += 1
+            for i in range(len(new_names)):
+                for j in range(i + 1, len(new_names)):
+                    ind_i = names.index(new_names[i])
+                    ind_j = names.index(new_names[j])
                     graph.add_edge(ind_i, ind_j)
             stri = ""
-    return people, graph
-
-
-def visualize_graph(people, graph):
-    print("not implemented")
+    return graph, names, counts
 
 
 if __name__ == '__main__':
-    test_A_Christmas_Carol_Graph()
+    create_character_graph(book_address="./Data/Gutenberg/txt/Charles Dickens___A Christmas Carol.txt")

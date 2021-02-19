@@ -8,7 +8,16 @@ import networkx as nx
 
 
 def draw(G, labels):
+    """
+    Doesn't work in PyCharm. Run it in terminal.
+    :param G: networkx graph
+    :param labels: list of node names (to show when the mouse hovers over the node)
+    """
     pos = nx.spring_layout(G)
+    # other layouts:
+    # pos = nx.circular_layout(G)
+    # pos = nx.kamada_kawai_layout(G)
+    # pos = nx.shell_layout(G)
     nx.set_node_attributes(G, pos, 'pos')
     edge_x = []
     edge_y = []

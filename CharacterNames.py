@@ -3,6 +3,7 @@ import nltk
 from nameparser.parser import HumanName
 import networkx as nx
 from nltk.tag import StanfordNERTagger
+import spacy
 import os
 
 
@@ -10,32 +11,8 @@ import os
 # TODO Improve names extraction: Try stanford for names extraction
 # TODO Names with size 1 or less are IGNORED in get_character_names
 
-# Deprecated!
-def get_character_names(text):
-    """
-    :param text: raw text
-    :return: list of strings of all names
-    """
-    tokens = nltk.tokenize.word_tokenize(text)
-    pos = nltk.pos_tag(tokens)
-    sentt = nltk.ne_chunk(pos, binary=False)
-    person = []
-    person_list = []
-    name = ""
-    for subtree in sentt.subtrees(filter=lambda t: t.label() == 'PERSON'):
-        for leaf in subtree.leaves():
-            person.append(leaf[0])
-        if len(person) > 1:  # avoid grabbing lone surnames
-            for part in person:
-                name += part + ' '
-            if name[:-1] not in person_list:
-                person_list.append(name[:-1])
-        name = ''
-        person = []
-    return person_list
 
-
-def get_character_names_v2(text):
+def get_character_names_nltk(text):
     """
     :param text: raw text
     :return: list of strings of all names (repetitions are not removed)
@@ -51,14 +28,25 @@ def get_character_names_v2(text):
             person.append(leaf[0])
         for part in person:
             name += part + ' '
-        if name[:-1] not in person_list:  # TODO remove this if and handle the case in the caller
-            person_list.append(name[:-1])
+        person_list.append(name[:-1])
         name = ''
         person = []
     return person_list
 
 
-def get_character_names_stanford(text, PATH = "./stanford-ner"):
+def get_character_names_spacy(text):  # using spacy
+    # Create Doc object
+    nlp = spacy.load("en_core_web_sm")
+    doc = nlp(text)
+
+    # Identify the persons
+    persons = [ent.text for ent in doc.ents if ent.label_ == 'PERSON']
+
+    # Return persons
+    return persons
+
+
+def get_character_names_stanford(text, PATH="./stanford-ner"):  # using stanford
     """
     :param text: raw text
     :param PATH: path to stanford-ner folder
@@ -121,12 +109,13 @@ def update_name_in_list(name, nlist, index):
 
 
 # TODO Clean the graph before outputting
-def create_character_graph(book_address):
+def create_character_graph(book_address, max_dist = 30):
     """
+    :param max_dist: distance between two words (#sentences) determining a relation (i.e. a page)
     :param book_address:
     :return graph: networkx graph, nodes are labeled 0, 1, ...
     :return names: list of node names, names[i] = name of node i in the graph.
-    :return counts: number of each name's appearance in the text, name[i] is found count[i] times
+    :return counts: number of each name's appearances in the text, name[i] is found count[i] times
     """
     book_read = open(book_address, "r")
     # whole book as a string
@@ -134,18 +123,22 @@ def create_character_graph(book_address):
     names = []
     counts = []
     G = nx.Graph()
+    cashed_names = []
     for li, line in enumerate(book_read.readlines()):
         stri = stri + line
-        if li % 10 == 1:
-            new_names = get_character_names_v3(stri)  # NOTE: the name extractor
+        if li % (max_dist//2) == 1:
+            new_names = get_character_names_stanford(stri)  # NOTE: the name extractor
+            # add new names to list of all names
             for name in new_names:
-                if name not in names:  # TODO for loop and check the name exists or not?
+                if name not in names:
                     names.append(name)
                     counts.append(1)
                     G.add_node(names.index(name))
                 else:
                     counts[names.index(name)] += 1
+            # draw edges
             for i in range(len(new_names)):
+                # adding rels between all newly seen
                 for j in range(i + 1, len(new_names)):
                     ind_i = names.index(new_names[i])
                     ind_j = names.index(new_names[j])
@@ -153,10 +146,18 @@ def create_character_graph(book_address):
                         G[ind_i][ind_j]["weight"] += 1
                     else:
                         G.add_edge(ind_i, ind_j, weight=1)
+                # adding rels between newly seen and previously seen
+                for s in cashed_names:
+                    ind_i = names.index(new_names[i])
+                    ind_j = names.index(s)
+                    if G.has_edge(ind_i, ind_j):
+                        G[ind_i][ind_j]["weight"] += 1
+                    else:
+                        G.add_edge(ind_i, ind_j, weight=1)
+            cashed_names = new_names
             stri = ""
     return G, names, counts
 
 
 if __name__ == '__main__':
     create_character_graph(book_address="./Data/Gutenberg/txt/Charles Dickens___A Christmas Carol.txt")
-

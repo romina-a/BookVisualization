@@ -5,6 +5,8 @@ import networkx as nx
 from nltk.tag import StanfordNERTagger
 import spacy
 import os
+import stanza
+from nltk.parse import CoreNLPParser
 
 
 # TODO Improve the similarity condition
@@ -35,6 +37,10 @@ def get_character_names_nltk(text):
 
 
 def get_character_names_spacy(text):  # using spacy
+    """
+        :param text: raw text
+        :return: list of strings of all names (repetitions are not removed)
+    """
     # Create Doc object
     nlp = spacy.load("en_core_web_sm")
     doc = nlp(text)
@@ -72,48 +78,66 @@ def get_character_names_stanford(text, PATH="./stanford-ner"):  # using stanford
     return person_list
 
 
-def names_similar(name1, name2):
+def get_character_names_stanford_server(text):  # using stanford
     """
-    :param name1: string
-    :param name2: string
-    :return: true if strings are the same person
+    MUST have the Stanford CoreNLP server running
+    NOTE source: https://github.com/nltk/nltk/wiki/Stanford-CoreNLP-API-in-NLTK
+    :param text: raw text
+    :return: list of strings of all names (repetitions are not removed)
     """
-    hn1 = HumanName(name1)
-    hn2 = HumanName(name2)
-    if len(hn1) == len(hn2):
-        return hn1 == hn2
-    else:
-        return name1 in name2 or name2 in name1
+    if text.isspace():
+        return []
+    # print("text:", text)
+    SERVER_URL = 'http://localhost:9000'
+    tokenizer = CoreNLPParser(url=SERVER_URL)
+    ner_tagger = CoreNLPParser(url=SERVER_URL, tagtype='ner')
+    tokens = tokenizer.tokenize(text)
+    wtags = ner_tagger.tag(tokens)
+    person_list = []
+    name = ""
+    for (w, t) in wtags:
+        if t == 'PERSON':
+            name = name + w + " "
+        else:
+            if name != "":
+                person_list.append(name[:-1])
+                name = ""
+    # print("people:", person_list)
+    return person_list
 
 
-def name_in_list(name, nlist, scores):
+def get_character_names_stanza_OntoNotes(text):
     """
-    :param name: string
-    :param nlist: list of strings
-    :param scores: score of each name, if two similar names are found, the one with higher score is returned
-    :return: if name exists: index of name in nlist, else None
+    to download the model:
+        stanza.download('en')
+    :param text: raw text
+    :return: list of strings of all names (repetitions are not removed)
     """
-    index = None
-    s = min(scores)
-    for i, n in enumerate(nlist):
-        if names_similar(name, n):
-            if scores[i] >= s:
-                s = scores[i]
-                index = i
-    return index
+    nlp = stanza.Pipeline('en', verbose=False)
+    doc = nlp(text)
+    persons = [ent.text for ent in doc.entities if ent.type == 'PERSON']
+    return persons
 
 
-def update_name_in_list(name, nlist, index):
-    if len(HumanName(name)) > len(HumanName(nlist[index])):
-        nlist[index] = name
+def get_character_names_stanza_CoNLL03(text):
+    """
+    to download the model:
+        stanza.download('en')
+        stanza.download('en', processors={'ner': 'CoNLL03'})
+    :param text: raw text
+    :return: list of strings of all names (repetitions are not removed)
+    """
+    nlp = stanza.Pipeline('en', verbose=False, processors={'ner': 'CoNLL03'})
+    doc = nlp(text)
+    persons = [ent.text for ent in doc.entities if ent.type == 'PER']
+    return persons
 
 
-# TODO Clean the graph before outputting
-def create_character_graph(book_address, max_dist = 30):
+def create_character_graph(book_address, max_dist=30):
     """
     :param max_dist: distance between two words (#sentences) determining a relation (i.e. a page)
     :param book_address:
-    :return graph: networkx graph, nodes are labeled 0, 1, ...
+    :return graph: networkx wieghted graph, nodes are labeled 0, 1, ...
     :return names: list of node names, names[i] = name of node i in the graph.
     :return counts: number of each name's appearances in the text, name[i] is found count[i] times
     """
@@ -126,8 +150,12 @@ def create_character_graph(book_address, max_dist = 30):
     cashed_names = []
     for li, line in enumerate(book_read.readlines()):
         stri = stri + line
-        if li % (max_dist//2) == 1:
-            new_names = get_character_names_stanford(stri)  # NOTE: the name extractor
+        if li % (max_dist // 2) == 1:
+            new_names = get_character_names_stanford_server(stri)  # NOTE: the name extractor
+
+            # remove repeated names
+            new_names = list(set(new_names))
+
             # add new names to list of all names
             for name in new_names:
                 if name not in names:
@@ -159,5 +187,97 @@ def create_character_graph(book_address, max_dist = 30):
     return G, names, counts
 
 
-if __name__ == '__main__':
-    create_character_graph(book_address="./Data/Gutenberg/txt/Charles Dickens___A Christmas Carol.txt")
+def create_character_MultiGraph(book_address, max_dist=30):
+    """
+    :param max_dist: distance between two words (#sentences) determining a relation (i.e. a page)
+    :param book_address:
+    :return graph: networkx MultiGraph, node labels are character names. Each
+    """
+    book_read = open(book_address, "r")
+    # whole book as a string
+    stri = ""
+    G = nx.MultiGraph()
+    cashed_names = []
+    for li, line in enumerate(book_read.readlines()):
+        stri = stri + line
+        if li % (max_dist // 2) == (max_dist // 2) - 1:
+            new_names = get_character_names_stanford_server(stri)  # NOTE: the name extractor
+
+            # add new names to list of all names and increase count
+            for name in new_names:
+                if not G.has_node(name):
+                    G.add_node(name)
+                    G.nodes[name]['count'] = 1
+                else:
+                    G.nodes[name]['count'] += 1
+
+            # remove repeated names
+            new_names = list(set(new_names))
+
+            # draw edges
+            for i in range(len(new_names)):
+                # adding rels between all newly seen
+                for j in range(i + 1, len(new_names)):
+                    u = new_names[i]
+                    v = new_names[j]
+                    G.add_edge(u, v, time=li)
+                # adding rels between newly seen and previously seen
+                for j in range(len(cashed_names)):
+                    u = new_names[i]
+                    v = cashed_names[j]
+                    G.add_edge(u, v, time=li)
+            cashed_names = new_names
+            stri = ""
+    return G
+
+
+def names_similar(name1, name2):
+    """
+    :param name1: string
+    :param name2: string
+    :return: true if strings are the same person
+    """
+    hn1 = HumanName(name1.lower())
+    hn2 = HumanName(name2.lower())
+    if len(hn1) == len(hn2):
+        return hn1 == hn2
+    else:
+        return name1 in name2 or name2 in name1
+
+
+def merge_nodes(G, nodes):
+    """
+
+    :param G: networkx MultiGraph whose nodes will be merged
+    :param nodes: list of nodes of G to be merged
+    """
+    print("not implemented")
+    main = max(nodes, key=len)
+    for n in nodes:
+        if n == main: continue
+        G.nodes[main]['count'] += G.nodes[n]['count']
+        nx.contracted_nodes(G, main, n, self_loops=False, copy=False)
+
+    # TODO: remove edges with same time
+
+
+def similarity_graph(G):
+    G_sim = nx.Graph()
+    for n in G.nodes():
+        G_sim.add_node(n)
+    for u in G.nodes(data=True):
+        for v in G.nodes(data=True):
+            if names_similar(u[0], v[0]) and u[0] != v[0]:
+                G_sim.add_edge(u[0], v[0])
+    return G_sim
+
+
+def merge_similar_nodes(G):
+    sim = similarity_graph(G)
+    con_comps = nx.connected_components(sim)
+    con_comps_list = []
+    for c in con_comps:
+        con_comps_list.append(list(c))
+    for c in con_comps_list:
+        merge_nodes(G, c)
+

@@ -1,6 +1,7 @@
-Data/*
-venv/*
+Data
+venv
 .DS_Store
 .idea
 __pycache__
-stanford-ner/*
+stanford-ner
+stanford-corenlp-full-2018-02-27

@@ -1,19 +1,16 @@
-import plotly.graph_objects as go
-import dash
-import dash_core_components as dcc
-import dash_html_components as html
 import networkx as nx
-import matplotlib.pyplot as plt
+import plotly.graph_objects as go
+
 
 # NOTE source: https://plotly.com/python/network-graphs/
 
 
-def draw_plotly(G, labels):
+def draw_plotly(G):
     """
-    Doesn't work in PyCharm. Run it in terminal.
+    If it doesn't work in PyCharm, run it in terminal.
     :param G: networkx graph
-    :param labels: list of node names (to show when the mouse hovers over the node)
     """
+
     pos = nx.spring_layout(G)
     # other layouts:
     # pos = nx.circular_layout(G)

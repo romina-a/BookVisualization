@@ -1,5 +1,5 @@
 import networkx as nx
 
 
-def merge_nodes(G, u, v):
-    nx.contracted_nodes()
+def find_highest_deg(G, number = 10):
+    print("not implemented")

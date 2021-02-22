@@ -19,6 +19,12 @@ G.add_edge("Romina", "Amin", t=1)
 G.add_edge("Mrs. Abadi", "Soghra", t=1)
 G.add_edge("Soghra", "Romina", t=1)
 
+DrawGraph.draw_plotly(G, 'G')
+print("G nodes:")
+for c in G.nodes():
+    print("{}:{}".format(c, G.nodes(data=True)[c]))
+print("G edges:")
+
 
 def test_names_similar():
     for u in list(G):
@@ -27,33 +33,25 @@ def test_names_similar():
 
 
 def test_similarity_graph():
-    DrawGraph.draw_plotly(G)
     Gsim = CharacterNames._similarity_graph(G)
-    DrawGraph.draw_plotly(Gsim)
+    DrawGraph.draw_plotly(Gsim, 'Similarity Graph')
     return Gsim
 
 
 def test_merge_nodes_1():
     Gcopy = G.copy()
 
-    DrawGraph.draw_plotly(G, 'G')
-    print("G nodes:")
-    for c in G.nodes():
-        print("{}:{}".format(c, Gcopy.nodes(data=True)[c]))
-    print("G edges:")
-    for e in G.edges(data=True):
-        print(e)
-
     CharacterNames._merge_nodes(Gcopy, ['Mrs. Abadi', 'Mrs. Romina'])
-    DrawGraph.draw_plotly(Gcopy, 'merged Mrs. Abadi, Mrs. Romina')
+    DrawGraph.draw_plotly(Gcopy, '1. merged (Mrs. Abadi, Mrs. Romina)')
 
     CharacterNames._merge_nodes(Gcopy, ['Romina', 'Amin Ghasemzadeh'])
-    DrawGraph.draw_plotly(Gcopy, 'merged Mrs. Abadi, Mrs. Romina/ '
-                                 'Romina, Amin Ghasemzadeh')
+    DrawGraph.draw_plotly(Gcopy, '2. merged: (Mrs. Abadi, Mrs. Romina)/ '
+                                 '(Romina, Amin Ghasemzadeh)')
     CharacterNames._merge_nodes(Gcopy, ['Mrs. Romina', 'Amin Ghasemzadeh'])
-    DrawGraph.draw_plotly(Gcopy, 'merged Mrs. Abadi, Mrs. Romina/ '
-                                 'Romina, Amin Ghasemzadeh/ '
-                                 'Mrs. Romina, Amin Ghasemzadeh')
+    DrawGraph.draw_plotly(Gcopy, '3. merged (Mrs. Abadi, Mrs. Romina)/ '
+                                 '(Romina, Amin Ghasemzadeh)/ '
+                                 '(Mrs. Romina, Amin Ghasemzadeh)')
+
     print('merged Mrs. Abadi, Mrs. Romina/ '
           'Romina, Amin Ghasemzadeh/ '
           'Mrs. Romina, Amin Ghasemzadeh')
@@ -68,13 +66,6 @@ def test_merge_nodes_1():
 
 def test_merge_nodes_2():
     Gcopy = G.copy()
-    DrawGraph.draw_plotly(G, 'G')
-    print("G nodes:")
-    for c in G.nodes():
-        print("{}:{}".format(c, Gcopy.nodes(data=True)[c]))
-    print("G edges:")
-    for e in G.edges(data=True):
-        print(e)
     CharacterNames._merge_nodes(Gcopy, ['Mrs. Abadi', 'Mrs. Romina', 'Amin Ghasemzadeh'])
     DrawGraph.draw_plotly(Gcopy, 'merged Mrs. Abadi, Mrs. Romina, Amin Ghasemzadeh')
     print("Gcopy nodes:")
@@ -87,16 +78,10 @@ def test_merge_nodes_2():
 
 
 def test_merge_similar_nodes():
-    DrawGraph.draw_plotly(G, 'G')
-    print("G nodes:")
-    for c in G.nodes():
-        print("{}:{}".format(c, Gcopy.nodes(data=True)[c]))
-    print("G edges:")
-
-    Gcopy=G.copy
+    Gcopy=G.copy()
     CharacterNames.merge_similar_nodes(Gcopy)
 
-    DrawGraph.draw_plotly(Gcopy, 'Gcopy')
+    DrawGraph.draw_plotly(Gcopy, 'G similar nodes merged')
     print("Gcopy nodes:")
     for c in Gcopy.nodes():
         print("{}:{}".format(c, Gcopy.nodes(data=True)[c]))
@@ -104,3 +89,11 @@ def test_merge_similar_nodes():
     for e in Gcopy.edges(data=True):
         print(e)
     return Gcopy
+
+
+def run_all():
+    test_names_similar()
+    test_similarity_graph()
+    test_merge_nodes_1()
+    test_merge_nodes_2()
+    test_merge_similar_nodes()

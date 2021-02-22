@@ -9,10 +9,8 @@ import stanza
 from nltk.parse import CoreNLPParser
 
 
-# TODO Improve the similarity condition
-# TODO Improve names extraction: Try stanford for names extraction
-# TODO Names with size 1 or less are IGNORED in get_character_names
-
+# ~~~~~~~~~~~~~~~~~~~~~~~~~Name Extraction Methods~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# TODO force include prefixes with condition (if last word is Mrs or ... )
 
 def get_character_names_nltk(text):
     """
@@ -133,6 +131,8 @@ def get_character_names_stanza_CoNLL03(text):
     return persons
 
 
+# ~~~~~~~~~~~~~~~~~~~~~~~~~Graph creation~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# !!! Deprecated
 def create_character_graph(book_address, max_dist=30):
     """
     :param max_dist: distance between two words (#sentences) determining a relation (i.e. a page)
@@ -142,6 +142,9 @@ def create_character_graph(book_address, max_dist=30):
     :return counts: number of each name's appearances in the text, name[i] is found count[i] times
     """
     book_read = open(book_address, "r")
+    last_line_ind = len(book_read.readlines()) - 1
+    book_read = open(book_address, "r")
+
     # whole book as a string
     stri = ""
     names = []
@@ -150,11 +153,11 @@ def create_character_graph(book_address, max_dist=30):
     cashed_names = []
     for li, line in enumerate(book_read.readlines()):
         stri = stri + line
-        if li % (max_dist // 2) == 1:
+        if li % (max_dist // 2) == 1 or li ==last_line_ind:
             new_names = get_character_names_stanford_server(stri)  # NOTE: the name extractor
 
-            # remove repeated names
-            new_names = list(set(new_names))
+            # # remove repeated names
+            # new_names = list(set(new_names))
 
             # add new names to list of all names
             for name in new_names:
@@ -194,13 +197,17 @@ def create_character_MultiGraph(book_address, max_dist=30):
     :return graph: networkx MultiGraph, node labels are character names. Each
     """
     book_read = open(book_address, "r")
+    last_line_ind = len(book_read.readlines()) - 1
+    book_read = open(book_address, "r")
     # whole book as a string
     stri = ""
     G = nx.MultiGraph()
     cashed_names = []
+
     for li, line in enumerate(book_read.readlines()):
         stri = stri + line
-        if li % (max_dist // 2) == (max_dist // 2) - 1:
+        if li % (max_dist // 2) == (max_dist // 2) - 1 or li == last_line_ind:
+            print(f"{((li*100)//last_line_ind)}% done", end='\r')
             new_names = get_character_names_stanford_server(stri)  # NOTE: the name extractor
 
             # add new names to list of all names and increase count
@@ -211,8 +218,8 @@ def create_character_MultiGraph(book_address, max_dist=30):
                 else:
                     G.nodes[name]['count'] += 1
 
-            # remove repeated names
-            new_names = list(set(new_names))
+            # # remove repeated names
+            # new_names = list(set(new_names))
 
             # draw edges
             for i in range(len(new_names)):
@@ -231,53 +238,64 @@ def create_character_MultiGraph(book_address, max_dist=30):
     return G
 
 
-def names_similar(name1, name2):
+# ~~~~~~~~~~~~~~~~~~~~~~~~~Graph post processing~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# TODO this is simple, improve
+def _names_similar(name1, name2):
     """
     :param name1: string
     :param name2: string
     :return: true if strings are the same person
     """
+    # if no similar words between the names
+    if len(set(name1.split()).intersection(set(name2.split()))) == 0:
+        return False
+
     hn1 = HumanName(name1.lower())
     hn2 = HumanName(name2.lower())
-    if len(hn1) == len(hn2):
-        return hn1 == hn2
-    else:
-        return name1 in name2 or name2 in name1
+
+    if hn1.first !='' and hn2.first !='' and hn1.last!='' and hn2.last!='':
+        return hn1.first == hn2.first and hn1.last == hn2.last
+
+    if hn1.first != '' and hn2.first != '' and hn1.first != hn2.first:
+        return False
+    if hn1.last != '' and hn2.last != '' and hn1.last != hn2.last:
+        return False
+    if hn1.title in ['Mrs.'] and hn2.title in ['Ms.', 'Miss']:
+        return False
+    if hn2.title in ['Mrs.'] and hn1.title in ['Ms.', 'Miss']:
+        return False
+    return True
 
 
-def merge_nodes(G, nodes):
+def _merge_nodes(G, nodes):
     """
-
+    Merges the nodes, the resulting node's name is the longest name
     :param G: networkx MultiGraph whose nodes will be merged
     :param nodes: list of nodes of G to be merged
     """
-    print("not implemented")
     main = max(nodes, key=len)
     for n in nodes:
         if n == main: continue
         G.nodes[main]['count'] += G.nodes[n]['count']
         nx.contracted_nodes(G, main, n, self_loops=False, copy=False)
 
-    # TODO: remove edges with same time
 
-
-def similarity_graph(G):
+def _similarity_graph(G):
     G_sim = nx.Graph()
     for n in G.nodes():
         G_sim.add_node(n)
-    for u in G.nodes(data=True):
-        for v in G.nodes(data=True):
-            if names_similar(u[0], v[0]) and u[0] != v[0]:
-                G_sim.add_edge(u[0], v[0])
+    for u in list(G):
+        for v in list(G):
+            if _names_similar(u, v) and u != v:
+                G_sim.add_edge(u, v)
     return G_sim
 
 
 def merge_similar_nodes(G):
-    sim = similarity_graph(G)
+    sim = _similarity_graph(G)
     con_comps = nx.connected_components(sim)
     con_comps_list = []
     for c in con_comps:
         con_comps_list.append(list(c))
     for c in con_comps_list:
-        merge_nodes(G, c)
-
+        _merge_nodes(G, c)

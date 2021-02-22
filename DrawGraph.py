@@ -5,9 +5,10 @@ import plotly.graph_objects as go
 # NOTE source: https://plotly.com/python/network-graphs/
 
 
-def draw_plotly(G):
+def draw_plotly(G, graph_title="graph"):
     """
     If it doesn't work in PyCharm, run it in terminal.
+    :param graph_title: the title to show on the plot
     :param G: networkx graph
     """
 
@@ -44,8 +45,9 @@ def draw_plotly(G):
 
     node_trace = go.Scatter(
         x=node_x, y=node_y,
-        mode='markers',
+        mode='markers+text',
         hoverinfo='text',
+        text=list(G),
         marker=dict(
             showscale=True,
             # colorscale options
@@ -55,7 +57,7 @@ def draw_plotly(G):
             colorscale='YlGnBu',
             reversescale=True,
             color=[],
-            size=10,
+            size=20,
             colorbar=dict(
                 thickness=15,
                 title='Node Connections',
@@ -72,11 +74,11 @@ def draw_plotly(G):
 
     node_trace.marker.color = node_adjacencies
     # node_trace.text = node_text
-    node_trace.text = labels
+    node_trace.text = list(G)
 
     fig = go.Figure(data=[edge_trace, node_trace],
                     layout=go.Layout(
-                        title='<br>Book Graph',
+                        title='<br>' + graph_title,
                         titlefont_size=16,
                         showlegend=False,
                         hovermode='closest',
@@ -134,7 +136,7 @@ def draw_plotly_weighted(G, labels):
         x1, y1 = G.nodes[edge[1]]['pos']
         w = edge[2]['weight']
         trace = make_edge([x0, x1, None], [y0, y1, None], w,
-                           0.3*w)
+                          0.3 * w)
         edge_trace.append(trace)
 
     node_x = []
@@ -177,8 +179,8 @@ def draw_plotly_weighted(G, labels):
     node_trace.text = labels
 
     layout = go.Layout(
-        paper_bgcolor = 'rgba(0,0,0,0)',
-        plot_bgcolor = 'rgba(0,0,0,0)'
+        paper_bgcolor='rgba(0,0,0,0)',
+        plot_bgcolor='rgba(0,0,0,0)'
     )
     fig = go.Figure(layout=layout)
 

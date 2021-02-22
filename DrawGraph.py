@@ -4,7 +4,7 @@ import plotly.graph_objects as go
 
 # NOTE source: https://plotly.com/python/network-graphs/
 
-
+# TODO add hover for edge degree
 def draw_plotly(G, graph_title="graph"):
     """
     If it doesn't work in PyCharm, run it in terminal.

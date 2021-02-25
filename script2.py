@@ -1,13 +1,13 @@
 from CharacterNames import create_character_MultiGraph, merge_similar_nodes
-from DrawGraph import draw_plotly, draw_plotly_weighted
+from DrawGraph import draw_plotly_MultiGraph as draw
 import time
 import networkx as nx
 import GraphProssesing
 
 # TODO create function to accept different books
 
-# book_name = "Charles Dickens___A Christmas Carol"
-book_name = "Charles Dickens___Oliver Twist"
+book_name = "Charles Dickens___A Christmas Carol"
+# book_name = "Charles Dickens___Oliver Twist"
 cc_adr = "./Data/Gutenberg/txt/"+book_name+".txt"
 
 # creating the graph and timing the process
@@ -24,7 +24,7 @@ print("before merging")
 print("name\t count")
 for i in list(G):
     print(f'{i}\t{G.nodes[i]["count"]}')
-draw_plotly(G, 'multi graph before merging')
+draw(G, 'multi graph before merging')
 
 
 # merge
@@ -42,18 +42,17 @@ for i in list(G):
     if "contraction" in G.nodes[i]:
         print(f'{i}\t{list(G.nodes[i]["contraction"].keys())}')
 
-draw_plotly(G, 'multi graph after merging')
+draw(G, 'multi graph after merging')
 
 # largest connected component
 largest_cc = max(nx.connected_components(G), key=len)
 G_main = G.subgraph(largest_cc).copy()
-draw_plotly(G_main, 'multi graph largest cc after merging')
+draw(G_main, 'multi graph largest cc after merging')
 
 # highest degree nodes:
 highs = GraphProssesing.find_highest_deg(G, 20)
 print("highest degree nodes are:\n\t{}".format(highs))
 G_high = G.subgraph(highs).copy()
-draw_plotly(G_high, 'after merging highest degree nodes')
+draw(G_high, 'after merging highest degree nodes')
 
 GraphProssesing.plot_degree_dist(G)
-

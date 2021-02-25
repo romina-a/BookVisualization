@@ -311,14 +311,11 @@ def _merge_nodes(G, nodes):
     :param G: networkx MultiGraph whose nodes will be merged
     :param nodes: list of node ids of G to be merged
     """
-    main = max(nodes, key=lambda x : G.nodes[x]['count'])
-    print("merging: ", nodes)
+    main = max(nodes, key=lambda x: G.nodes[x]['count'])
     for n in nodes:
         if n == main: continue
         G.nodes[main]['count'] += G.nodes[n]['count']
         nx.contracted_nodes(G, main, n, self_loops=False, copy=False)
-
-    print(list(G))
 
 
 # TODO can make better, now removes the minimum number of edges to have zero conflicts

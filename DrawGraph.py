@@ -1,5 +1,6 @@
 import networkx as nx
 import plotly.graph_objects as go
+from math import exp
 
 
 def _make_node_trace(G):
@@ -46,7 +47,7 @@ def _make_node_trace(G):
     return node_trace
 
 
-def _make_edge(x, y, text, width):
+def _make_edge_trace(x, y, text, width):
     """
     create two traces one for the edge with the specified width,
     other for the label in the middle of the edge
@@ -83,14 +84,14 @@ def _make_edge_traces(G):
                 x0, y0 = G.nodes[u]['pos']
                 x1, y1 = G.nodes[v]['pos']
                 w = len(G.get_edge_data(u, v))
-                trace1, trace2 = _make_edge([x0, x1, None], [y0, y1, None], w,
-                                            0.3 * w)
+                trace1, trace2 = _make_edge_trace([x0, x1, None], [y0, y1, None], w,
+                                                  1 / (1 + exp(-0.1 * w)))
                 edge_trace.append(trace1)
                 edge_trace.append(trace2)
     return edge_trace
 
 
-def draw_plotly_MultiGraph(G):
+def draw_plotly_MultiGraph(G, graph_title=""):
     """
         Source: https://github.com/rweng18/midsummer_network/blob/master/midsummer_graph.ipynb
         :param G: networkx graph
@@ -107,6 +108,7 @@ def draw_plotly_MultiGraph(G):
     node_trace = _make_node_trace(G)
 
     layout = go.Layout(
+        title='<br>' + graph_title,
         paper_bgcolor='rgba(0,0,0,0)',
         plot_bgcolor='rgba(0,0,0,0)'
     )
@@ -146,8 +148,8 @@ def draw_plotly_weighted(G):
                 x0, y0 = G.nodes[u]['pos']
                 x1, y1 = G.nodes[v]['pos']
                 w = len(G.get_edge_data(u, v))
-                trace1, trace2 = _make_edge([x0, x1, None], [y0, y1, None], w,
-                                            0.3 * w)
+                trace1, trace2 = _make_edge_trace([x0, x1, None], [y0, y1, None], w,
+                                                  1/(1+exp(-0.1*w)))
                 edge_trace.append(trace1)
                 edge_trace.append(trace2)
 

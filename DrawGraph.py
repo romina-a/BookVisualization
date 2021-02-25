@@ -1,6 +1,7 @@
 import networkx as nx
 import plotly.graph_objects as go
 from math import exp
+import matplotlib.pyplot as plt
 
 
 # TODO add more hover points for edges
@@ -126,93 +127,6 @@ def draw_plotly_MultiGraph(G, graph_title=""):
     fig.show()
 
 
-def draw_plotly_weighted(G):
-    """
-    Source: https://github.com/rweng18/midsummer_network/blob/master/midsummer_graph.ipynb
-    :param G: networkx graph
-    :param labels: list of node names (to show when the mouse hovers over the node)
-    """
-    # pos = nx.spring_layout(G)
-    # other layouts:
-    # pos = nx.circular_layout(G)
-    # pos = nx.kamada_kawai_layout(G)
-    pos = nx.shell_layout(G)
-    nx.set_node_attributes(G, pos, 'pos')
-
-    edge_trace = []
-    node_ids = list(G)
-    for i in range(len(node_ids)):
-        for j in range(i + 1, len(node_ids)):
-            u = node_ids[i]
-            v = node_ids[j]
-            if G.get_edge_data(u, v) is not None:
-                x0, y0 = G.nodes[u]['pos']
-                x1, y1 = G.nodes[v]['pos']
-                w = len(G.get_edge_data(u, v))
-                trace1, trace2 = _make_edge_trace([x0, x1, None], [y0, y1, None], w,
-                                                  1/(1+exp(-0.1*w)))
-                edge_trace.append(trace1)
-                edge_trace.append(trace2)
-
-    node_x = []
-    node_y = []
-    for node in G.nodes():
-        x, y = G.nodes[node]['pos']
-        node_x.append(x)
-        node_y.append(y)
-
-    node_trace = go.Scatter(
-        x=node_x, y=node_y,
-        mode='markers',
-        hoverinfo='text',
-        marker=dict(
-            showscale=True,
-            # colorscale options
-            # 'Greys' | 'YlGnBu' | 'Greens' | 'YlOrRd' | 'Bluered' | 'RdBu' |
-            # 'Reds' | 'Blues' | 'Picnic' | 'Rainbow' | 'Portland' | 'Jet' |
-            # 'Hot' | 'Blackbody' | 'Earth' | 'Electric' | 'Viridis' |
-            colorscale='YlGnBu',
-            reversescale=True,
-            color=[],
-            size=10,
-            colorbar=dict(
-                thickness=15,
-                title='Node Connections',
-                xanchor='left',
-                titleside='right'
-            ),
-            line_width=2))
-
-    node_adjacencies = []
-    node_text = []
-    for node, adjacencies in enumerate(G.adjacency()):
-        node_adjacencies.append(len(adjacencies[1]))
-        node_text.append('# of connections: ' + str(len(adjacencies[1])))
-
-    node_trace.marker.color = node_adjacencies
-    # node_trace.text = node_text
-    node_trace.text = list(G)
-
-    layout = go.Layout(
-        paper_bgcolor='rgba(0,0,0,0)',
-        plot_bgcolor='rgba(0,0,0,0)'
-    )
-    fig = go.Figure(layout=layout)
-
-    for trace in edge_trace:
-        fig.add_trace(trace)
-
-    fig.add_trace(node_trace)
-
-    fig.update_layout(showlegend=False)
-
-    fig.update_xaxes(showticklabels=False)
-
-    fig.update_yaxes(showticklabels=False)
-
-    fig.show()
-
-
 # Deprecated
 # NOTE source: https://plotly.com/python/network-graphs/
 def draw_plotly(G, graph_title="graph"):
@@ -301,4 +215,105 @@ def draw_plotly(G, graph_title="graph"):
                         xaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
                         yaxis=dict(showgrid=False, zeroline=False, showticklabels=False))
                     )
+    fig.show()
+
+
+def make_edge(x, y, text, width):
+    '''Creates a scatter trace for the edge between x's and y's with given width
+    Parameters
+    ----------
+    x    : a tuple of the endpoints' x-coordinates in the form, tuple([x0, x1, None])
+    y    : a tuple of the endpoints' y-coordinates in the form, tuple([y0, y1, None])
+    width: the width of the line
+    Returns
+    -------
+    An edge trace that goes between x0 and x1 with specified width.
+    '''
+    return go.Scatter(x=x,
+                      y=y,
+                      line=dict(width=width,
+                                color='cornflowerblue'),
+                      hoverinfo='text',
+                      text=([text]),
+                      mode='lines')
+
+
+def draw_plotly_weighted(G):
+    """
+    Source: https://github.com/rweng18/midsummer_network/blob/master/midsummer_graph.ipynb
+    :param G: networkx graph
+    :param labels: list of node names (to show when the mouse hovers over the node)
+    """
+    # pos = nx.spring_layout(G)
+    # other layouts:
+    # pos = nx.circular_layout(G)
+    # pos = nx.kamada_kawai_layout(G)
+    pos = nx.shell_layout(G)
+    nx.set_node_attributes(G, pos, 'pos')
+
+    edge_trace = []
+    for edge in G.edges(data=True):
+        x0, y0 = G.nodes[edge[0]]['pos']
+        x1, y1 = G.nodes[edge[1]]['pos']
+        w = edge[2]['weight']
+        trace = make_edge([x0, x1, None], [y0, y1, None], w,
+                           0.3*w)
+        edge_trace.append(trace)
+
+    node_x = []
+    node_y = []
+    for node in G.nodes():
+        x, y = G.nodes[node]['pos']
+        node_x.append(x)
+        node_y.append(y)
+
+    node_trace = go.Scatter(
+        x=node_x, y=node_y,
+        mode='markers',
+        hoverinfo='text',
+        marker=dict(
+            showscale=True,
+            # colorscale options
+            # 'Greys' | 'YlGnBu' | 'Greens' | 'YlOrRd' | 'Bluered' | 'RdBu' |
+            # 'Reds' | 'Blues' | 'Picnic' | 'Rainbow' | 'Portland' | 'Jet' |
+            # 'Hot' | 'Blackbody' | 'Earth' | 'Electric' | 'Viridis' |
+            colorscale='YlGnBu',
+            reversescale=True,
+            color=[],
+            size=10,
+            colorbar=dict(
+                thickness=15,
+                title='Node Connections',
+                xanchor='left',
+                titleside='right'
+            ),
+            line_width=2))
+
+    node_adjacencies = []
+    node_text = []
+    for node, adjacencies in enumerate(G.adjacency()):
+        node_adjacencies.append(len(adjacencies[1]))
+        node_text.append('# of connections: ' + str(len(adjacencies[1])))
+
+    node_trace.marker.color = node_adjacencies
+    # node_trace.text = node_text
+    node_trace.text = list(G)
+
+    layout = go.Layout(
+        paper_bgcolor = 'rgba(0,0,0,0)',
+        plot_bgcolor = 'rgba(0,0,0,0)'
+    )
+    fig = go.Figure(layout=layout)
+
+    for trace in edge_trace:
+        fig.add_trace(trace)
+
+    fig.add_trace(node_trace)
+
+    fig.update_layout(showlegend=False)
+
+    fig.update_xaxes(showticklabels=False)
+
+    fig.update_yaxes(showticklabels=False)
+
     fig.show()

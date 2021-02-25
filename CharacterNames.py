@@ -7,10 +7,18 @@ import spacy
 import os
 import stanza
 from nltk.parse import CoreNLPParser
+import spacy  # python -m spacy download en
+import en_core_web_sm
+from nltk.tag import StanfordNERTagger
 
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~Name Extraction Methods~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # TODO force include prefixes with condition in get names(if last word is Mrs or ... )
+# Amin TODOs
+# TODO Improve names extraction
+# TODO Improve the similarity condition, Cleaning
+# TODO Describing the link
+# TODO Clean the graph before outputting
 
 def get_character_names_nltk(text):
     """
@@ -104,6 +112,29 @@ def get_character_names_stanford_server(text):  # using stanford
     return person_list
 
 
+def filtering(text):
+    text = text.replace("\t", " ")
+    text = text.replace("\n", " ")
+    text = text.replace("!", " ! ")
+    text = text.replace(":", " : ")
+    text = text.replace("Mr.", "Mr")
+    text = text.replace("Ms.", "Ms")
+    text = text.replace("Mrs.", "Mrs")
+    text = text.replace(".", " . ")
+    text = text.replace("?", " ? ")
+    text = text.replace(")", " ) ")
+    text = text.replace("(", " ( ")
+    text = text.replace("'s", " ")
+    text = text.replace('"', ' " ')
+    text = text.replace("'", " ' ")
+    text = text.replace("`", " ` ")
+    text = text.replace(",", " , ")
+    text = text.replace(";", " ; ")
+    text = text.replace("-", " ")
+    text = text.replace("_", " ")
+    return text
+
+
 def get_character_names_stanza_OntoNotes(text):
     """
     to download the model:
@@ -146,19 +177,18 @@ def create_character_graph(book_address, max_dist=30):
     book_read = open(book_address, "r")
 
     # whole book as a string
-    stri = ""
+    text = ""
     names = []
     counts = []
     G = nx.Graph()
     cashed_names = []
     for li, line in enumerate(book_read.readlines()):
-        stri = stri + line
-        if li % (max_dist // 2) == 1 or li ==last_line_ind:
-            new_names = get_character_names_stanford_server(stri)  # NOTE: the name extractor
-
-            # # remove repeated names
-            # new_names = list(set(new_names))
-
+        text = text + line
+        if li % (max_dist//2) == 1 or li ==last_line_ind:
+            # filtering
+            text = filtering(text)
+            # the name extractor
+            new_names = get_character_names_spacy(text) # NOTE: the name extractor
             # add new names to list of all names
             for name in new_names:
                 if name not in names:
@@ -186,9 +216,8 @@ def create_character_graph(book_address, max_dist=30):
                     else:
                         G.add_edge(ind_i, ind_j, weight=1)
             cashed_names = new_names
-            stri = ""
-    return G, names, counts
-
+            text = ""
+        return G, names, counts
 
 def _draw_edges(G, new_names, cashed_names, li):
     """
@@ -342,6 +371,72 @@ def _similarity_graph(G):
             if _names_similar(u, v) and u != v:
                 G_sim.add_edge(u, v, c=1)
     return G_sim
+
+
+def create_character_graph_by_search(book_address, max_dist=30):
+    """
+    :param max_dist: distance between two words (#sentences) determining a relation (i.e. a page)
+    :param book_address:
+    :return graph: networkx graph, nodes are labeled 0, 1, ...
+    :return names: list of node names, names[i] = name of node i in the graph.
+    :return counts: number of each name's appearances in the text, name[i] is found count[i] times
+    """
+    book_read = open(book_address, "r")
+    # whole book as a string
+    text = ""
+    names = []
+    counts = []
+    G = nx.Graph()
+    cashed_names = []
+    for li, line in enumerate(book_read.readlines()):
+        text = text + line
+        if li % (max_dist//2) == 1:
+            # filtering
+            text = filtering(text)
+            # the name extractor
+            available_names = get_character_names_spacy(text)
+            # add new names to list of all names
+            for name in available_names:
+                if name not in names:
+                    names.append(name)
+                    counts.append(0)
+                    G.add_node(names.index(name))
+            # counts
+            for name in names:
+                res = [i for i in range(len(text)) if text.startswith(name, i)]
+                counts[names.index(name)] += len(res)
+                res.clear()
+    print(5)
+    text = ""
+    for li, line in enumerate(book_read.readlines()):  # more accurate rather do them all in one loop
+        text = text + line
+        if li % (max_dist // 2) == 1:
+            # filtering
+            text = filtering(text)
+            # available names in the paragraph
+            available_names = [name for name in names if text.find(name) >= 0]
+            # draw edges
+            for i in range(len(available_names)):
+                # adding rels between all newly seen
+                for j in range(i + 1, len(available_names)):
+                    ind_i = names.index(available_names[i])
+                    ind_j = names.index(available_names[j])
+                    if G.has_edge(ind_i, ind_j):
+                        G[ind_i][ind_j]["weight"] += 1
+                    else:
+                        G.add_edge(ind_i, ind_j, weight=1)
+                # adding rels between newly seen and previously seen
+                for s in cashed_names:
+                    ind_i = names.index(available_names[i])
+                    ind_j = names.index(s)
+                    if G.has_edge(ind_i, ind_j):
+                        G[ind_i][ind_j]["weight"] += 1
+                    else:
+                        G.add_edge(ind_i, ind_j, weight=1)
+
+            cashed_names = available_names
+            text = ""
+    return G, names, counts
 
 
 def merge_similar_nodes(G):

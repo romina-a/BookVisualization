@@ -75,7 +75,7 @@ def _make_edge_trace(x, y, text, width):
                       )
 
 
-def _make_edge_traces(G):
+def _make_edge_traces_multi(G):
     edge_trace = []
     node_ids = list(G)
     for i in range(len(node_ids)):
@@ -93,12 +93,41 @@ def _make_edge_traces(G):
     return edge_trace
 
 
-def draw_plotly_MultiGraph(G, graph_title=""):
+def _make_edge_traces_weighted(G):
+    edge_trace = []
+    for e in G.edges(data=True):
+        u = e[0]
+        v = e[1]
+        w = e[2]['weight']
+        x0, y0 = G.nodes[u]['pos']
+        x1, y1 = G.nodes[v]['pos']
+        trace1, trace2 = _make_edge_trace([x0, x1, None], [y0, y1, None], w,
+                                          min(max(1, 0.03 * w), 5))
+        edge_trace.append(trace1)
+        edge_trace.append(trace2)
+    return edge_trace
+
+
+def _make_edge_traces_simple(G):
+    edge_trace = []
+    for e in G.edges(data=True):
+        u = e[0]
+        v = e[1]
+        x0, y0 = G.nodes[u]['pos']
+        x1, y1 = G.nodes[v]['pos']
+        trace1, trace2 = _make_edge_trace([x0, x1, None], [y0, y1, None], 1, 2)
+        edge_trace.append(trace1)
+        edge_trace.append(trace2)
+    return edge_trace
+
+
+def draw_plotly_MultiGraph(G, graph_title="", type="multi"):
     """
         Source: https://github.com/rweng18/midsummer_network/blob/master/midsummer_graph.ipynb
+        :param type: "multi" or "weighted" or "simple"
         :param G: networkx graph
         :param labels: list of node names (to show when the mouse hovers over the node)
-        """
+    """
     # pos = nx.spring_layout(G)
     # NOTE: other layouts:
     # pos = nx.circular_layout(G)
@@ -106,7 +135,13 @@ def draw_plotly_MultiGraph(G, graph_title=""):
     # pos = nx.shell_layout(G)
     nx.set_node_attributes(G, pos, 'pos')
 
-    edge_traces = _make_edge_traces(G)
+    if type.lower() == "multi":
+        edge_traces = _make_edge_traces_multi(G)
+    elif type.lower() == "weighted":
+        edge_traces = _make_edge_traces_weighted(G)
+    else:
+        edge_traces = _make_edge_traces_simple(G)
+
     node_trace = _make_node_trace(G)
 
     layout = go.Layout(

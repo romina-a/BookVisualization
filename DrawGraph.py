@@ -3,6 +3,7 @@ import plotly.graph_objects as go
 from math import exp
 
 
+# TODO add more hover points for edges
 def _make_node_trace(G):
     node_x = []
     node_y = []
@@ -85,7 +86,7 @@ def _make_edge_traces(G):
                 x1, y1 = G.nodes[v]['pos']
                 w = len(G.get_edge_data(u, v))
                 trace1, trace2 = _make_edge_trace([x0, x1, None], [y0, y1, None], w,
-                                                  1 / (1 + exp(-0.1 * w)))
+                                                  min(max(1, 0.03 * w), 5))
                 edge_trace.append(trace1)
                 edge_trace.append(trace2)
     return edge_trace
@@ -98,10 +99,10 @@ def draw_plotly_MultiGraph(G, graph_title=""):
         :param labels: list of node names (to show when the mouse hovers over the node)
         """
     # pos = nx.spring_layout(G)
-    # other layouts:
+    # NOTE: other layouts:
     # pos = nx.circular_layout(G)
-    # pos = nx.kamada_kawai_layout(G)
-    pos = nx.shell_layout(G)
+    pos = nx.kamada_kawai_layout(G)
+    # pos = nx.shell_layout(G)
     nx.set_node_attributes(G, pos, 'pos')
 
     edge_traces = _make_edge_traces(G)

@@ -10,7 +10,7 @@ from nltk.parse import CoreNLPParser
 
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~Name Extraction Methods~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-# TODO force include prefixes with condition (if last word is Mrs or ... )
+# TODO force include prefixes with condition in get names(if last word is Mrs or ... )
 
 def get_character_names_nltk(text):
     """

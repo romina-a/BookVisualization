@@ -280,6 +280,7 @@ def _merge_nodes(G, nodes):
         nx.contracted_nodes(G, main, n, self_loops=False, copy=False)
 
 
+# TODO remove the nodes with min connection
 def _similarity_graph(G):
     G_sim = nx.Graph()
     for n in G.nodes():

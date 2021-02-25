@@ -123,7 +123,6 @@ def draw_plotly_MultiGraph(G):
     fig.show()
 
 
-# Deprecated
 def draw_plotly_weighted(G):
     """
     Source: https://github.com/rweng18/midsummer_network/blob/master/midsummer_graph.ipynb

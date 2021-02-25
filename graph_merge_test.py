@@ -2,24 +2,28 @@ import networkx as nx
 import CharacterNames
 import DrawGraph
 
+
 G = nx.MultiGraph()
-G.add_node("Romina", count=1)
-G.add_node("Mrs. Romina", count=1)
+G.add_node("Romina", count=3)
+G.add_node("Abadi", count=2)
 G.add_node("Mrs. Romina Abadi", count=1)
-G.add_node("Mrs. Abadi", count=1)
-G.add_node("Amin", count=1)
+G.add_node("Mrs. Abadi", count=3)
+G.add_node("Gholi Abadi", count=1)
+G.add_node("Amin", count=4)
 G.add_node("Amin Ghasemzadeh", count=1)
 G.add_node("Soghra", count=1)
 
-G.add_edge("Romina", "Mrs. Romina", t=1)
-G.add_edge("Romina", "Mrs. Romina", t=1)
-G.add_edge("Romina", "Mrs. Romina", t=1)
+G.add_edge("Romina", "Abadi", t=1)
+G.add_edge("Romina", "Abadi", t=1)
+G.add_edge("Romina", "Abadi", t=1)
 G.add_edge("Romina", "Amin", t=1)
 G.add_edge("Romina", "Amin", t=1)
 G.add_edge("Mrs. Abadi", "Soghra", t=1)
-G.add_edge("Soghra", "Romina", t=1)
+G.add_edge("Soghra", "Mrs. Romina Abadi", t=1)
+G.add_edge("Amin", 'Abadi', t=1)
+G.add_edge("Amin", "Gholi Abadi", t=1)
 
-DrawGraph.draw_plotly(G, 'G')
+DrawGraph.draw_plotly_weighted(G)
 print("G nodes:")
 for c in G.nodes():
     print("{}:{}".format(c, G.nodes(data=True)[c]))
@@ -97,3 +101,7 @@ def run_all():
     test_merge_nodes_1()
     test_merge_nodes_2()
     test_merge_similar_nodes()
+
+
+if __name__ == '__main__':
+    run_all()

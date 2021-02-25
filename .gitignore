@@ -3,4 +3,4 @@ venv
 .DS_Store
 .idea
 __pycache__
-stanford-ner
+stanford-*

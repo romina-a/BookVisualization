@@ -58,3 +58,5 @@ G_high = G.subgraph(dict(highs).keys())
 draw(G_high, 'after merging highest degree nodes')
 
 GraphProssesing.plot_degree_dist(G)
+
+GraphProssesing.top5_pagerank_history(G, num_of_snapshots=30)

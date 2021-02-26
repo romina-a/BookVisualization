@@ -71,6 +71,8 @@ def get_character_names_stanford(text, PATH="./stanford-ner"):  # using stanford
     return person_list
 
 
+# TODO force include prefixes
+# TODO use filtering
 def get_character_names_stanford_server(text):  # using stanford
     """
     MUST have the Stanford CoreNLP server running

@@ -3,6 +3,8 @@ import plotly.graph_objects as go
 
 
 # TODO add more hover points for edges, improve hover text (show u and v)
+# TODO degree is not right for weighted graph (we might not need a weighted graph version!)
+
 def _make_node_trace(G):
     node_x = []
     node_y = []
@@ -120,16 +122,9 @@ def _make_edge_traces_simple(G):
     return edge_trace
 
 
-layouts = {
-    'spring': nx.spring_layout,
-    'circular': nx.circular_layout,
-    'kamada_kawai': nx.kamada_kawai_layout,
-    'shell': nx.shell_layout,
-}
-
-
-def draw_graph_plotly(G, graph_title="", graph_type="multi", layout="spring"):
+def draw_graph_plotly(G, graph_title="", graph_type="multi"):
     """
+        WARNING: you must set the layout first
         Source: https://github.com/rweng18/midsummer_network/blob/master/midsummer_graph.ipynb
 
         :param G: networkx graph
@@ -137,8 +132,6 @@ def draw_graph_plotly(G, graph_title="", graph_type="multi", layout="spring"):
         :param graph_type: type of G, options: "multi", "weighted", "simple"
         :param layout: the layout for nodes,  options: "spring", "circular", "kamada_kawai", "shell"
     """
-    pos = layouts[layout](G)
-    nx.set_node_attributes(G, pos, 'pos')
 
     if graph_type.lower() == "multi":
         edge_traces = _make_edge_traces_multi(G)

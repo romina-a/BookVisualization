@@ -1,21 +1,28 @@
 from nameparser.parser import HumanName
 import networkx as nx
-from NameExtraction import get_character_names_stanford_server as extract_names
+from ExtractNames import get_character_names_stanford_server as extract_names
 
 MAX_DIST_DEFAULT = 10
+LAYOUT_DEFAULT = 'spring'
+
+layouts = {
+    'spring': nx.spring_layout,
+    'circular': nx.circular_layout,
+    'kamada_kawai': nx.kamada_kawai_layout,
+    'shell': nx.shell_layout,
+}
 
 
-# NOTE: I don't know if this is a good idea (especially in terms of memory, it is very bad)
-#  another option is to save the RawMultiGraph only and calculate others when needed,
-#  which will be memory efficient but time inefficient
-#  this looks like a better idea because the memory needed is only 4times bigger than the graph
-class CharacterGraph:
-    def __init__(self, book_address, max_dist=MAX_DIST_DEFAULT):
-        self.RawMultiGraph = create_character_MultiGraph(book_address, max_dist)
-        self.RawWeightedGraph = multi_from_weighted(self.RawMultiGraph)
-        self.MergedMultiGraph = self.RawMultiGraph.copy()
-        merge_similar_nodes(self.MergedMultiGraph)
-        self.MergedWeightedGraph = multi_from_weighted(self.MergedMultiGraph)
+def set_layout(G, layout):
+    """
+    sets 'pos' attribute on G nodes based on the layout
+
+    :param G: Graph
+    :param layout:
+    :return:
+    """
+    pos = layouts[layout](G)
+    nx.set_node_attributes(G, pos, 'pos')
 
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~Graph creation~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -45,12 +52,14 @@ def _draw_edges(G, new_names, cashed_names, time_stamp):
             G.add_edge(u, v, time=time_stamp)
 
 
-def create_character_MultiGraph(book_address, max_dist=MAX_DIST_DEFAULT):
+def create_character_MultiGraph(book_address, max_dist=MAX_DIST_DEFAULT, layout=LAYOUT_DEFAULT):
     """
     returns an nx.MultiGraph with the following properties:
-            each node id is one unique character name
-            node attributes: 'count': total #times the character name was found in the book
-            edge attributes: 'time': time stamps representing when u and v appeared closer than max_dist
+            -graph attributes: 'end_time': int, the last time_stamp
+            each node id is a unique character name
+            -node attributes: 'count': int, total #times the character name was found in the book
+                             'pos': tuple, (x,y) set based on the layout for drawing
+            -edge attributes: 'time': time stamps representing when u and v appeared closer than max_dist
 
     :param max_dist: int, distance between two words (#sentences) determining a relation (i.e. a page)
     :param book_address: string, the address to .txt file of the book
@@ -59,11 +68,12 @@ def create_character_MultiGraph(book_address, max_dist=MAX_DIST_DEFAULT):
     book_read = open(book_address, "r")
     last_line_ind = len(book_read.readlines()) - 1
     book_read = open(book_address, "r")
+
     # whole book as a string
     text = ""
     G = nx.MultiGraph()
     cashed_names = []
-
+    time = 0
     for line_number, line in enumerate(book_read.readlines()):
         text = text + line
         if line_number % (max_dist // 2) == (max_dist // 2) - 1 or line_number == last_line_ind:
@@ -78,44 +88,14 @@ def create_character_MultiGraph(book_address, max_dist=MAX_DIST_DEFAULT):
                 else:
                     G.nodes[name]['count'] += 1
 
-            # # remove repeated names
-            # new_names = list(set(new_names))
-
-            _draw_edges(G, new_names, cashed_names, line_number)
+            _draw_edges(G, new_names, cashed_names, time)
+            time += 1
 
             cashed_names = new_names
             text = ""
+    G.graph['end_time'] = time
+    set_layout(G, layout)
     return G
-
-
-def multi_from_weighted(G):
-    """
-    returns an nx.Graph, equal to the input MultiGraph,
-    with the following properties:
-            node attributes: the same as node attributes of the input graph G
-            edge attributes: 'weight': total #times nodes u and v appeared closer than max_dist lines
-                             'times': list of time stamps for each time u and v appeared closer than max_dist
-                                      length of the list = weight
-
-    :param G: nx.MultiGraph, edges must have 'time' attribute
-    :return: Weighted nx.Graph
-    """
-    # create empty simple graph
-    G_weighted = nx.Graph()
-    # copy the nodes from G
-    nodes_info = list(G.nodes(data=True))
-    nodes = list(G)
-    G_weighted.add_nodes_from(nodes_info)
-    for i in range(len(nodes)):
-        for j in range(i + 1, len(nodes)):
-            u = nodes[i]
-            v = nodes[j]
-            ts = []
-            if G.get_edge_data(u, v) is None: continue
-            for e in G.get_edge_data(u, v):
-                ts.append(G.get_edge_data(u, v)[e]['time'])
-            G_weighted.add_edge(u, v, weight=len(G.get_edge_data(u, v)), times=ts)
-    return G_weighted
 
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~Graph post processing~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

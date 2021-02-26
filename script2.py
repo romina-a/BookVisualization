@@ -18,7 +18,7 @@ G = create_character_MultiGraph(cc_adr)
 
 print("%%%% took:{}s".format(time.time()-t))
 
-# save the graph, can load with G = nx.read_gpickle("./<name>.gpickle")
+# save the graph, can load with G = nx.read_gpickle("<adr>/<name>.gpickle")
 nx.write_gpickle(G, f'./SavedGraphs/{book_name}_separate.gpickle')
 
 # print the names

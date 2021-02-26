@@ -130,7 +130,6 @@ def draw_graph_plotly(G, graph_title="", graph_type="multi"):
         :param G: networkx graph
         :param graph_title: string, the title is shown on top left of the graphs
         :param graph_type: type of G, options: "multi", "weighted", "simple"
-        :param layout: the layout for nodes,  options: "spring", "circular", "kamada_kawai", "shell"
     """
 
     if graph_type.lower() == "multi":

@@ -137,15 +137,24 @@ def _names_similar(name1, name2):
     if hn2.title in ['mrs'] and hn1.title in ['ms', 'miss']:
         return False
     # title - honorifics - kinship
-    if hn1.title in ['mr', 'sir', 'uncle', "master", "gentleman", "sire", "dad", "father", "grandpa", "lord", "brother",
-                     "nephew", "king", "prince"] and hn2.title in ['ms', 'miss', "mrs", "mistress", "madam", "maam",
-                                                                   "mom", "mother", "grandma", "granny", "dame", "lady",
-                                                                   "sister", "niece", "queen", "princess"]:
+    if hn1.title in ['mr', 'sir', 'uncle', "master",
+                     "gentleman", "sire", "dad", "father",
+                     "grandpa", "lord", "brother",
+                     "nephew", "king", "prince"] and \
+            hn2.title in ['ms', 'miss', "mrs",
+                          "mistress", "madam", "maam",
+                          "mom", "mother", "grandma", "granny", "dame", "lady",
+                          "sister", "niece", "queen", "princess"]:
         return False
-    if hn2.title in ['mr', 'sir', 'uncle', "master", "gentleman", "sire", "dad", "father", "grandpa", "lord", "brother",
-                     "nephew", "king", "prince"] and hn1.title in ['ms', 'miss', "mrs", "mistress", "madam", "maam",
-                                                                   "mom", "mother", "grandma", "granny", "dame", "lady",
-                                                                   "sister", "niece", "queen", "princess"]:
+    if hn2.title in ['mr', 'sir', 'uncle',
+                     "master", "gentleman", "sire",
+                     "dad", "father", "grandpa",
+                     "lord", "brother",
+                     "nephew", "king", "prince"] and \
+            hn1.title in ['ms', 'miss', "mrs",
+                          "mistress", "madam", "maam",
+                          "mom", "mother", "grandma", "granny", "dame", "lady",
+                          "sister", "niece", "queen", "princess"]:
         return False
     return True
 

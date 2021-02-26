@@ -40,8 +40,9 @@ def _make_node_trace(G):
     for i, adjacencies in enumerate(G.adjacency()):
         node_adjacencies.append(len(adjacencies[1]))
         node = list(G)[i]
+        count_str = "--" if 'count' not in G.nodes(data=True)[node] else G.nodes(data=True)[node]['count']
         node_text.append('# of connections: ' + str(len(adjacencies[1])) +
-                         '\n/ count: ' + str(G.nodes(data=True)[node]['count']) +
+                         '\n/ count: ' + count_str +
                          '\n/ degree: ' + str(G.degree(node)))
     node_trace.marker.color = node_adjacencies
     node_trace.hovertext = node_text
@@ -58,8 +59,8 @@ def _make_edge_trace(x, y, text, width):
     :param width: edge width
     :return: two traces
     """
-    x_mid = [(x[0]+x[1])/2]
-    y_mid = [(y[0]+y[1])/2]
+    x_mid = [(x[0] + x[1]) / 2]
+    y_mid = [(y[0] + y[1]) / 2]
     texts = [text]
     return go.Scatter(x=x,
                       y=y,
@@ -87,7 +88,7 @@ def _make_edge_traces_multi(G):
                 x1, y1 = G.nodes[v]['pos']
                 w = len(G.get_edge_data(u, v))
                 trace1, trace2 = _make_edge_trace([x0, x1, None], [y0, y1, None], w,
-                                                  min(max(1, 0.03 * w), 5))
+                                                  min(max(0.1, 0.5 * w), 5))
                 edge_trace.append(trace1)
                 edge_trace.append(trace2)
     return edge_trace
@@ -121,18 +122,24 @@ def _make_edge_traces_simple(G):
     return edge_trace
 
 
-def draw_plotly_MultiGraph(G, graph_title="", type="multi"):
+layouts = {
+    'spring': nx.spring_layout,
+    'circular': nx.circular_layout,
+    'kamada_kawai': nx.kamada_kawai_layout,
+    'shell': nx.shell_layout,
+}
+
+
+def draw_graph_plotly(G, graph_title="", type="multi", layout="spring"):
     """
         Source: https://github.com/rweng18/midsummer_network/blob/master/midsummer_graph.ipynb
-        :param type: "multi" or "weighted" or "simple"
+
         :param G: networkx graph
-        :param labels: list of node names (to show when the mouse hovers over the node)
+        :param graph_title: the title is shown on top left of the graphs
+        :param type: type of G, options: "multi", "weighted", "simple"
+        :param layout: options: the layout for nodes, "spring", "circular", "kamada_kawai", "shell"
     """
-    # pos = nx.spring_layout(G)
-    # NOTE: other layouts:
-    # pos = nx.circular_layout(G)
-    pos = nx.kamada_kawai_layout(G)
-    # pos = nx.shell_layout(G)
+    pos = layouts[layout](G)
     nx.set_node_attributes(G, pos, 'pos')
 
     if type.lower() == "multi":
@@ -292,7 +299,7 @@ def draw_plotly_weighted(G):
         x1, y1 = G.nodes[edge[1]]['pos']
         w = edge[2]['weight']
         trace = make_edge([x0, x1, None], [y0, y1, None], w,
-                           0.3*w)
+                          0.3 * w)
         edge_trace.append(trace)
 
     node_x = []
@@ -335,8 +342,8 @@ def draw_plotly_weighted(G):
     node_trace.text = list(G)
 
     layout = go.Layout(
-        paper_bgcolor = 'rgba(0,0,0,0)',
-        plot_bgcolor = 'rgba(0,0,0,0)'
+        paper_bgcolor='rgba(0,0,0,0)',
+        plot_bgcolor='rgba(0,0,0,0)'
     )
     fig = go.Figure(layout=layout)
 

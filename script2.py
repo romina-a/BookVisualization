@@ -1,5 +1,5 @@
 from CharacterNames import create_character_MultiGraph, merge_similar_nodes
-from DrawGraph import draw_plotly_MultiGraph as draw
+from DrawGraph import draw_graph_plotly as draw
 import time
 import networkx as nx
 import GraphProssesing

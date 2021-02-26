@@ -160,6 +160,8 @@ def filtering(text):
 
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~Graph creation~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# TODO don't draw self edges.
+
 def _draw_edges(G, new_names, cashed_names, li):
     """
     1. Draws edges between every two words in new_names.

@@ -1,167 +1,12 @@
-import os
-import nltk
 from nameparser.parser import HumanName
 import networkx as nx
-import os
-import stanza
-from nltk.parse import CoreNLPParser
-import spacy
-from nltk.tag import StanfordNERTagger
+from ExtractNames import get_character_names_stanford_server as extract_names
 
-
-# ~~~~~~~~~~~~~~~~~~~~~~~~~Name Extraction Methods~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-# TODO force include prefixes with condition in get names(if last word is Mrs or ... )
-# Amin TODOs
-# TODO Improve names extraction
-# TODO Improve the similarity condition, Cleaning
-# TODO Describing the link
-# TODO Clean the graph before outputting
-
-def get_character_names_nltk(text):
-    """
-    :param text: raw text
-    :return: list of strings of all names (repetitions are not removed)
-    """
-    tokens = nltk.tokenize.word_tokenize(text)
-    pos = nltk.pos_tag(tokens)
-    sentt = nltk.ne_chunk(pos, binary=False)
-    person = []
-    person_list = []
-    name = ""
-    for subtree in sentt.subtrees(filter=lambda t: t.label() == 'PERSON'):
-        for leaf in subtree.leaves():
-            person.append(leaf[0])
-        for part in person:
-            name += part + ' '
-        person_list.append(name[:-1])
-        name = ''
-        person = []
-    return person_list
-
-
-def get_character_names_spacy(text):  # using spacy
-    """
-        :param text: raw text
-        :return: list of strings of all names (repetitions are not removed)
-    """
-    # Create Doc object
-    nlp = spacy.load("en_core_web_sm")
-    doc = nlp(text)
-
-    # Identify the persons
-    persons = [ent.text for ent in doc.ents if ent.label_ == 'PERSON']
-
-    # Return persons
-    return persons
-
-
-def get_character_names_stanford(text, PATH="./stanford-ner"):  # using stanford
-    """
-    :param text: raw text
-    :param PATH: path to stanford-ner folder
-    :return: list of strings of all names (repetitions are not removed)
-    """
-
-    # Path to stanford-ner folder
-    CLASSIFIER_PATH = os.path.join(PATH, "classifiers/english.all.3class.distsim.crf.ser.gz")
-    JAR_PATH = os.path.join(PATH, "stanford-ner.jar")
-    st = StanfordNERTagger(CLASSIFIER_PATH, JAR_PATH)
-
-    tokens = nltk.tokenize.word_tokenize(text)
-    wtags = st.tag(tokens)
-    person_list = []
-    name = ""
-    for (w, t) in wtags:
-        if t == 'PERSON':
-            name = name + w + " "
-        else:
-            if name != "":
-                person_list.append(name[:-1])
-                name = ""
-    return person_list
-
-
-def get_character_names_stanford_server(text):  # using stanford
-    """
-    MUST have the Stanford CoreNLP server running
-    NOTE source: https://github.com/nltk/nltk/wiki/Stanford-CoreNLP-API-in-NLTK
-    :param text: raw text
-    :return: list of strings of all names (repetitions are not removed)
-    """
-    if text.isspace():
-        return []
-    # print("text:", text)
-    SERVER_URL = 'http://localhost:9000'
-    tokenizer = CoreNLPParser(url=SERVER_URL)
-    ner_tagger = CoreNLPParser(url=SERVER_URL, tagtype='ner')
-    tokens = tokenizer.tokenize(text)
-    wtags = ner_tagger.tag(tokens)
-    person_list = []
-    name = ""
-    for (w, t) in wtags:
-        if t == 'PERSON':
-            name = name + w + " "
-        else:
-            if name != "":
-                person_list.append(name[:-1])
-                name = ""
-    # print("people:", person_list)
-    return person_list
-
-
-def get_character_names_stanza_OntoNotes(text):
-    """
-    to download the model:
-        stanza.download('en')
-    :param text: raw text
-    :return: list of strings of all names (repetitions are not removed)
-    """
-    nlp = stanza.Pipeline('en', verbose=False)
-    doc = nlp(text)
-    persons = [ent.text for ent in doc.entities if ent.type == 'PERSON']
-    return persons
-
-
-def get_character_names_stanza_CoNLL03(text):
-    """
-    to download the model:
-        stanza.download('en')
-        stanza.download('en', processors={'ner': 'CoNLL03'})
-    :param text: raw text
-    :return: list of strings of all names (repetitions are not removed)
-    """
-    nlp = stanza.Pipeline('en', verbose=False, processors={'ner': 'CoNLL03'})
-    doc = nlp(text)
-    persons = [ent.text for ent in doc.entities if ent.type == 'PER']
-    return persons
-
-
-def filtering(text):
-    text = text.replace("\t", " ")
-    text = text.replace("\n", " ")
-    text = text.replace("!", " ! ")
-    text = text.replace(":", " : ")
-    text = text.replace("Mr.", "Mr")
-    text = text.replace("Ms.", "Ms")
-    text = text.replace("Mrs.", "Mrs")
-    text = text.replace(".", " . ")
-    text = text.replace("?", " ? ")
-    text = text.replace(")", " ) ")
-    text = text.replace("(", " ( ")
-    text = text.replace("'s", " ")
-    text = text.replace('"', ' " ')
-    text = text.replace("'", " ' ")
-    text = text.replace("`", " ` ")
-    text = text.replace(",", " , ")
-    text = text.replace(";", " ; ")
-    text = text.replace("-", " ")
-    text = text.replace("_", " ")
-    return text
+# TODO Improve Cleaning
 
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~Graph creation~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # TODO don't draw self edges.
-
 def _draw_edges(G, new_names, cashed_names, li):
     """
     1. Draws edges between every two words in new_names.
@@ -184,7 +29,7 @@ def _draw_edges(G, new_names, cashed_names, li):
             G.add_edge(u, v, time=li)
 
 
-def create_character_MultiGraph(book_address, max_dist=30):
+def create_character_MultiGraph(book_address, max_dist=10):
     """
     :param max_dist: distance between two words (#sentences) determining a relation (i.e. a page)
     :param book_address:
@@ -194,15 +39,15 @@ def create_character_MultiGraph(book_address, max_dist=30):
     last_line_ind = len(book_read.readlines()) - 1
     book_read = open(book_address, "r")
     # whole book as a string
-    stri = ""
+    text = ""
     G = nx.MultiGraph()
     cashed_names = []
 
-    for li, line in enumerate(book_read.readlines()):
-        stri = stri + line
-        if li % (max_dist // 2) == (max_dist // 2) - 1 or li == last_line_ind:
-            print(f"{((li*100)//last_line_ind)}% done", end='\r')
-            new_names = get_character_names_stanford_server(stri)  # NOTE: the name extractor
+    for line_number, line in enumerate(book_read.readlines()):
+        text = text + line
+        if line_number % (max_dist // 2) == (max_dist // 2) - 1 or line_number == last_line_ind:
+            print(f"{((line_number*100)//last_line_ind)}% done", end='\r')
+            new_names = extract_names(text)  # NOTE: the name extractor
 
             # add new names to list of all names and increase count
             for name in new_names:
@@ -215,166 +60,59 @@ def create_character_MultiGraph(book_address, max_dist=30):
             # # remove repeated names
             # new_names = list(set(new_names))
 
-            _draw_edges(G, new_names, cashed_names, li)
+            _draw_edges(G, new_names, cashed_names, line_number)
 
             cashed_names = new_names
-            stri = ""
+            text = ""
     return G
 
 
-def create_character_graph_by_search(book_address, max_dist=30):
-    """
-    :param max_dist: distance between two words (#sentences) determining a relation (i.e. a page)
-    :param book_address:
-    :return graph: networkx graph, nodes are labeled 0, 1, ...
-    :return names: list of node names, names[i] = name of node i in the graph.
-    :return counts: number of each name's appearances in the text, name[i] is found count[i] times
-    """
-    book_read = open(book_address, "r")
-    # whole book as a string
-    text = ""
-    names = []
-    counts = []
-    G = nx.Graph()
-    cashed_names = []
-    for li, line in enumerate(book_read.readlines()):
-        text = text + line
-        if li % (max_dist//2) == 1:
-            # filtering
-            text = filtering(text)
-            # the name extractor
-            available_names = get_character_names_spacy(text)
-            # add new names to list of all names
-            for name in available_names:
-                if name not in names:
-                    names.append(name)
-                    counts.append(0)
-                    G.add_node(names.index(name))
-            # counts
-            for name in names:
-                res = [i for i in range(len(text)) if text.startswith(name, i)]
-                counts[names.index(name)] += len(res)
-                res.clear()
-    print(5)
-    text = ""
-    for li, line in enumerate(book_read.readlines()):  # more accurate rather do them all in one loop
-        text = text + line
-        if li % (max_dist // 2) == 1:
-            # filtering
-            text = filtering(text)
-            # available names in the paragraph
-            available_names = [name for name in names if text.find(name) >= 0]
-            # draw edges
-            for i in range(len(available_names)):
-                # adding rels between all newly seen
-                for j in range(i + 1, len(available_names)):
-                    ind_i = names.index(available_names[i])
-                    ind_j = names.index(available_names[j])
-                    if G.has_edge(ind_i, ind_j):
-                        G[ind_i][ind_j]["weight"] += 1
-                    else:
-                        G.add_edge(ind_i, ind_j, weight=1)
-                # adding rels between newly seen and previously seen
-                for s in cashed_names:
-                    ind_i = names.index(available_names[i])
-                    ind_j = names.index(s)
-                    if G.has_edge(ind_i, ind_j):
-                        G[ind_i][ind_j]["weight"] += 1
-                    else:
-                        G.add_edge(ind_i, ind_j, weight=1)
-
-            cashed_names = available_names
-            text = ""
-    return G, names, counts
-
-
-# !!! Deprecated
-def create_character_graph(book_address, max_dist=30):
-    """
-    :param max_dist: distance between two words (#sentences) determining a relation (i.e. a page)
-    :param book_address:
-    :return graph: networkx wieghted graph, nodes are labeled 0, 1, ...
-    :return names: list of node names, names[i] = name of node i in the graph.
-    :return counts: number of each name's appearances in the text, name[i] is found count[i] times
-    """
-    book_read = open(book_address, "r")
-    last_line_ind = len(book_read.readlines()) - 1
-    book_read = open(book_address, "r")
-
-    # whole book as a string
-    text = ""
-    names = []
-    counts = []
-    G = nx.Graph()
-    cashed_names = []
-    for li, line in enumerate(book_read.readlines()):
-        text = text + line
-        if li % (max_dist//2) == 1 or li ==last_line_ind:
-            # filtering
-            text = filtering(text)
-            # the name extractor
-            new_names = get_character_names_spacy(text) # NOTE: the name extractor
-            # add new names to list of all names
-            for name in new_names:
-                if name not in names:
-                    names.append(name)
-                    counts.append(1)
-                    G.add_node(names.index(name))
-                else:
-                    counts[names.index(name)] += 1
-            # draw edges
-            for i in range(len(new_names)):
-                # adding rels between all newly seen
-                for j in range(i + 1, len(new_names)):
-                    ind_i = names.index(new_names[i])
-                    ind_j = names.index(new_names[j])
-                    if G.has_edge(ind_i, ind_j):
-                        G[ind_i][ind_j]["weight"] += 1
-                    else:
-                        G.add_edge(ind_i, ind_j, weight=1)
-                # adding rels between newly seen and previously seen
-                for s in cashed_names:
-                    ind_i = names.index(new_names[i])
-                    ind_j = names.index(s)
-                    if G.has_edge(ind_i, ind_j):
-                        G[ind_i][ind_j]["weight"] += 1
-                    else:
-                        G.add_edge(ind_i, ind_j, weight=1)
-            cashed_names = new_names
-            text = ""
-        return G, names, counts
-
-
 # ~~~~~~~~~~~~~~~~~~~~~~~~~Graph post processing~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-# TODO this is simple, improve
 def _names_similar(name1, name2):
     """
     :param name1: string
     :param name2: string
     :return: true if strings are the same person
     """
+    name1_lower_list = name1.lower().split()
+    print(name1_lower_list)
+    name2_lower_list = name2.lower().split()
+    print(name2_lower_list)
     # if no similar words between the names
-    if len(set(name1.split()).intersection(set(name2.split()))) == 0:
+    if len([common for common in name1_lower_list if common in name2_lower_list]) == 0:
         return False
-
+    # subsets
+    if len(set(name1_lower_list).intersection(set(name2_lower_list))) == len(name1_lower_list):
+        return True
+    if len(set(name1_lower_list).intersection(set(name2_lower_list))) == len(name2_lower_list):
+        print(2)
+        return True
+    # titles!
     hn1 = HumanName(name1.lower())
     hn2 = HumanName(name2.lower())
-
-    # if both names have first and last and at least one does not match return False
-    if hn1.first !='' and hn2.first !='' and hn1.last!='' and hn2.last!='':
+    # {title} first= & last=
+    if hn1.first != '' and hn2.first != '' and hn1.last != '' and hn2.last != '':
         return hn1.first == hn2.first and hn1.last == hn2.last
-
+    # {title} first! & {last}
     if hn1.first != '' and hn2.first != '' and hn1.first != hn2.first:
         return False
+    # {title} {first} & last!
     if hn1.last != '' and hn2.last != '' and hn1.last != hn2.last:
         return False
-    if hn1.title in ['Mrs.'] and hn2.title in ['Ms.', 'Miss']:
+    # title
+    if hn1.title in ['mrs'] and hn2.title in ['ms', 'miss']:
         return False
-    if hn2.title in ['Mrs.'] and hn1.title in ['Ms.', 'Miss']:
+    if hn2.title in ['mrs'] and hn1.title in ['ms', 'miss']:
+        return False
+    # title - honorifics - kinship
+    if hn1.title in ['mr', 'sir', 'uncle', "master", "gentleman", "sire", "dad", "father", "grandpa", "lord", "brother", "nephew", "king", "prince"] and hn2.title in ['ms', 'miss', "mrs", "mistress", "madam", "maam", "mom", "mother", "grandma", "granny", "dame", "lady", "sister", "niece", "queen", "princess"]:
+        return False
+    if hn2.title in ['mr', 'sir', 'uncle', "master", "gentleman", "sire", "dad", "father", "grandpa", "lord", "brother", "nephew", "king", "prince"] and hn1.title in ['ms', 'miss', "mrs", "mistress", "madam", "maam", "mom", "mother", "grandma", "granny", "dame", "lady", "sister", "niece", "queen", "princess"]:
         return False
     return True
 
 
+# TODO this is simple, improve
 def _names_conflict(name1, name2):
     """
     returns True if the two words CANNOT be the same person

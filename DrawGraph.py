@@ -2,6 +2,7 @@ import networkx as nx
 import plotly.graph_objects as go
 from math import exp
 import matplotlib.pyplot as plt
+# TODO make it one
 
 
 # TODO add more hover points for edges
@@ -40,7 +41,7 @@ def _make_node_trace(G):
     for i, adjacencies in enumerate(G.adjacency()):
         node_adjacencies.append(len(adjacencies[1]))
         node = list(G)[i]
-        count_str = "--" if 'count' not in G.nodes(data=True)[node] else G.nodes(data=True)[node]['count']
+        count_str = "--" if 'count' not in G.nodes(data=True)[node] else str(G.nodes(data=True)[node]['count'])
         node_text.append('# of connections: ' + str(len(adjacencies[1])) +
                          '\n/ count: ' + count_str +
                          '\n/ degree: ' + str(G.degree(node)))

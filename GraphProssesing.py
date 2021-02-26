@@ -1,6 +1,7 @@
 import networkx as nx
 import matplotlib.pyplot as plt
 
+
 # TODO make readable
 def find_highest_deg(G, k='all'):
     """

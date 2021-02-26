@@ -1,5 +1,5 @@
-from CharacterNames import create_character_MultiGraph, merge_similar_nodes
-from DrawGraph import draw_graph_plotly as draw
+from CharacterGraph import create_character_graph, merge_similar_nodes
+from GraphDrawing import draw_graph_plotly as draw
 import time
 import networkx as nx
 import GraphProssesing
@@ -13,7 +13,7 @@ cc_adr = "./Data/Gutenberg/txt/"+book_name+".txt"
 # creating the graph and timing the process
 print("creating the graph...")
 t = time.time()
-G = create_character_MultiGraph(cc_adr, max_dist=30)
+G = create_character_graph(cc_adr, max_dist=30)
 print("%%%% took:{}s".format(time.time()-t))
 
 # save the graph, can load with G = nx.read_gpickle("./<name>.gpickle")

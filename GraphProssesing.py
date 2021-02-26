@@ -50,7 +50,7 @@ def plot_pagerank_dist(G):
     plt.show()
 
 
-# TODO: do we need 'count' snapshot?
+# TODO: do we need 'count' history?
 def create_snapshot(G, t1, t2):
     snapshot = nx.create_empty_copy(G, with_data=True)
     selected_edges = [e for e in G.edges(data=True) if e[2]['time'] in range(t1, t2)]
@@ -58,6 +58,7 @@ def create_snapshot(G, t1, t2):
     return snapshot
 
 
+# TODO: add x values based on the step size
 def pagerank_history_for_character(G, character_name, num_of_snapshots):
     end = G.graph['end_time']
     step = max(end // (num_of_snapshots - 1), 1)

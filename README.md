@@ -3,7 +3,7 @@
 code structure (useful functions):
 ```bash
 BookVisualization
-    ├── CharacterGraph: class & static methods to create the character graph
+    ├── CharacterGraph: methods to create the character graph
     │   ├── create_character_graph: Creates raw character graph
     │   └── merge_similar_nodes: merges character names that represent one person
     │  

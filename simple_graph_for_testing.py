@@ -29,8 +29,5 @@ pos = nx.spring_layout(G)
 nx.set_node_attributes(G, pos, 'pos')
 
 
-DrawGraph.draw_graph_plotly(G, graph_type='multi')
-print("G nodes:")
-for c in G.nodes():
-    print("{}:{}".format(c, G.nodes(data=True)[c]))
-print("G edges:")
+# DrawGraph.draw_graph_plotly(G, graph_type='multi')
+

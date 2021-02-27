@@ -11,6 +11,7 @@ import GraphProssesing
 book_name = "Charles Dickens___Oliver Twist"
 cc_adr = "./Data/Gutenberg/txt/"+book_name+".txt"
 
+cc_adr = "./Data/HarryPotter/cleaned/1. Harry Potter and the Philosophers Stone.txt"
 # creating the graph and timing the process
 print("creating the graph...")
 t = time.time()

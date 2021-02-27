@@ -1,4 +1,6 @@
-Data
+Data/Gutenberg
+Data/Outputs
+Data/test.txt
 venv
 .DS_Store
 .idea

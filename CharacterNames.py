@@ -3,9 +3,13 @@ import networkx as nx
 from ExtractNames import get_character_names_stanford_server as extract_names
 
 MAX_DIST_DEFAULT = 10
+
+# This is the layout for drawing the graphs.
+# It sit set here, because if we set it when we want to draw the graph, each time it changes
+# and the snapshots will not be visualized the way we want (with nodes in fixed positions)
 LAYOUT_DEFAULT = 'spring'
 
-layouts = {
+layout_options = {
     'spring': nx.spring_layout,
     'circular': nx.circular_layout,
     'kamada_kawai': nx.kamada_kawai_layout,
@@ -21,7 +25,7 @@ def set_layout(G, layout):
     :param layout:
     :return:
     """
-    pos = layouts[layout](G)
+    pos = layout_options[layout](G)
     nx.set_node_attributes(G, pos, 'pos')
 
 
@@ -54,15 +58,21 @@ def _draw_edges(G, new_names, cashed_names, time_stamp):
 
 def create_character_MultiGraph(book_address, max_dist=MAX_DIST_DEFAULT, layout=LAYOUT_DEFAULT):
     """
-    returns an nx.MultiGraph with the following properties:
-            -graph attributes: 'end_time': int, the last time_stamp
+    returns an nx.MultiGraph (https://networkx.org/documentation/stable/reference/classes/multigraph.html)
+    with the following properties:
+            -graph attributes (G.graph()):
+                             'end_time': int, the last time_stamp
             each node id is a unique character name
-            -node attributes: 'count': int, total #times the character name was found in the book
+            -node attributes (G.nodes(data=True)[<node_id>]):
+                             'count': int, total #times the character name was found in the book
                              'pos': tuple, (x,y) set based on the layout for drawing
-            -edge attributes: 'time': time stamps representing when u and v appeared closer than max_dist
+            -edge attributes (G.edges(data=True)[<u_id>,<v_id>, key]]/G.get_edge_data(<u_id>,<v_id>)):
+                             'time': time stamps representing when u and v appeared closer than max_dist
 
     :param max_dist: int, distance between two words (#sentences) determining a relation (i.e. a page)
     :param book_address: string, the address to .txt file of the book
+    :param layout: the 'pos' attribute of nodes is set according to the layout.
+                   layout options are: 'spring','circular','kamada_kawai','shell'
     :return graph: networkx Graph
     """
     book_read = open(book_address, "r")
@@ -85,8 +95,10 @@ def create_character_MultiGraph(book_address, max_dist=MAX_DIST_DEFAULT, layout=
                 if not G.has_node(name):
                     G.add_node(name)
                     G.nodes[name]['count'] = 1
+                    G.nodes[name]['counts'] = [time]
                 else:
                     G.nodes[name]['count'] += 1
+                    G.nodes[name]['counts'].append(time)
 
             _draw_edges(G, new_names, cashed_names, time)
             time += 1

@@ -1,19 +1,22 @@
 # BOOK VISUALIZATION
 
-project structure:
+code structure (useful functions):
 ```bash
 BookVisualization
     ├── CharacterGraph: class & static methods to create the character graph
-    │   └── CharacterGraph: Class, gets an adress and creates the character graph 
-    │        ├── get_CharacterGraph_weighted:
-    │        ├── get_CharacterGraph_merged:
-    │        ├── get_CharacterGraph_multi:
-    │        ├── __create_character_graph: Creates raw character graph
-    │        └── __merge_similar_nodes: merge character names that represent one person
-    ├── GraphDrawing
+    │   ├── create_character_graph: Creates raw character graph
+    │   └── merge_similar_nodes: merges character names that represent one person
+    │  
+    ├── DrawGraph
+    │   └── draw_graph_plotly: visualizes a graph.
+    │  
     ├── GraphProcessing
-    ├── NameExtraction
-    ├── .gitignore
+    │   ├── create_character_graph: Creates raw character graph
+    │   └── merge_similar_nodes: Merges character names that represent one person
+    │  
+    ├── ExtractNames
+    │   └── get_character_names_stanford_server: Method to extract names from text
+    │  
     └── README.md
 
 

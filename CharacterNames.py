@@ -19,17 +19,18 @@ layout_options = {
 
 def set_layout(G, layout):
     """
-    sets 'pos' attribute on G nodes based on the layout
+    Sets 'pos' attribute on G nodes based on the layout.
 
-    :param G: Graph
-    :param layout:
-    :return:
+    :param G: nx Graph of any type
+    :param layout: string, options: 'spring','circular','kamada_kawai','shell'
     """
     pos = layout_options[layout](G)
     nx.set_node_attributes(G, pos, 'pos')
 
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~Graph creation~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# TODO ? add 'times': list of ints, all the times the character name was seen. len(times)=count
+#  must change: create_character_MultiGraph, and _merge_nodes_in_MultiGraph
 def _draw_edges(G, new_names, cashed_names, time_stamp):
     """
     Draws edges between input lists (details: ↓), each edge has attribute 'time':time_stamp
@@ -65,15 +66,14 @@ def create_character_MultiGraph(book_address, max_dist=MAX_DIST_DEFAULT, layout=
             each node id is a unique character name
             -node attributes (G.nodes(data=True)[<node_id>]):
                              'count': int, total #times the character name was found in the book
-                             'pos': tuple, (x,y) set based on the layout for drawing
+                             'pos': tuple, (x,y) set based on the layout. For drawing.
             -edge attributes (G.edges(data=True)[<u_id>,<v_id>, key]]/G.get_edge_data(<u_id>,<v_id>)):
                              'time': time stamps representing when u and v appeared closer than max_dist
 
     :param max_dist: int, distance between two words (#sentences) determining a relation (i.e. a page)
     :param book_address: string, the address to .txt file of the book
-    :param layout: the 'pos' attribute of nodes is set according to the layout.
-                   layout options are: 'spring','circular','kamada_kawai','shell'
-    :return graph: networkx Graph
+    :param layout: string, options: 'spring','circular','kamada_kawai','shell'
+    :return graph: nx.MultiGraph
     """
     book_read = open(book_address, "r")
     last_line_ind = len(book_read.readlines()) - 1
@@ -95,10 +95,8 @@ def create_character_MultiGraph(book_address, max_dist=MAX_DIST_DEFAULT, layout=
                 if not G.has_node(name):
                     G.add_node(name)
                     G.nodes[name]['count'] = 1
-                    G.nodes[name]['counts'] = [time]
                 else:
                     G.nodes[name]['count'] += 1
-                    G.nodes[name]['counts'].append(time)
 
             _draw_edges(G, new_names, cashed_names, time)
             time += 1
@@ -114,14 +112,13 @@ def create_character_MultiGraph(book_address, max_dist=MAX_DIST_DEFAULT, layout=
 def _names_similar(name1, name2):
     """
     gets two names and returns True if they (probably) represent the same person
+
     :param name1: string
     :param name2: string
-    :return: true if strings are the same person
+    :return: bool, true if strings are the same person
     """
     name1_lower_list = name1.lower().split()
-    print(name1_lower_list)
     name2_lower_list = name2.lower().split()
-    print(name2_lower_list)
     # if no similar words between the names
     if len([common for common in name1_lower_list if common in name2_lower_list]) == 0:
         return False
@@ -129,7 +126,6 @@ def _names_similar(name1, name2):
     if len(set(name1_lower_list).intersection(set(name2_lower_list))) == len(name1_lower_list):
         return True
     if len(set(name1_lower_list).intersection(set(name2_lower_list))) == len(name2_lower_list):
-        print(2)
         return True
     # titles!
     hn1 = HumanName(name1.lower())
@@ -176,8 +172,9 @@ def _name_similarity_graph(G):
     """
     uses _names_similar to check similarity
 
-    :param G: networkx MultiGraph
-    :return: networkx Graph: nodes ids are the same as G, connected nodes are (probably) similar
+    :param G: nx.MultiGraph,
+    :return: nx.Graph, nodes ids are the same as G,
+                       connected nodes are (probably) similar
     """
     G_sim = nx.Graph()
     for n in G.nodes():
@@ -197,9 +194,10 @@ def _name_similarity_graph(G):
 def _names_conflict(name1, name2):
     """
     returns True if the two words CANNOT be the same person
-       :param name1: string
-       :param name2: string
-       :return: true if strings can not be the same person
+
+    :param name1: string
+    :param name2: string
+    :return: bool, True if strings can not be the same person
     """
 
     hn1 = HumanName(name1.lower())
@@ -222,6 +220,17 @@ def _names_conflict(name1, name2):
 # TODO think of other ways maybe, now removes the minimum number of edges to have zero conflicts
 #  --> think about a way to consider all conflicts and then remove the minimum edges to solve them all
 def _clear_name_conflicts(G_sim):
+    """
+    WARNING: changes G_sim
+    for each connected component in G_sim, (the nodes that are grouped together),
+        if there is a conflict between two of the nodes (using _names_conflict),
+        removes the minimum number of edges to resolve the conflict, and continues.
+        G_sim's connected components do not have conflicts.
+        The resulting graph depends on the order of processing the nodes.
+        The resulting graph is not the optimal solution.
+
+    :param G_sim: nx.Graph
+    """
     for c in nx.connected_components(G_sim):
         for name1 in c:
             for name2 in c:
@@ -233,9 +242,13 @@ def _clear_name_conflicts(G_sim):
 
 def _merge_nodes_in_MultiGraph(G, nodes):
     """
-    Merges all the nodes, the resulting node's name is the name with the most count, all edges preserved
-    :param G: networkx MultiGraph whose nodes will be merged
-    :param nodes: list of node ids of G to be merged
+    WARNING: Changes G
+    Merges all the nodes,
+    the resulting node's name is the name with the most count,
+    all edges preserved
+
+    :param G: nx.MultiGraph, its nodes will be merged
+    :param nodes: list of strings, the node ids of G to be merged
     """
     main = max(nodes, key=lambda x: G.nodes[x]['count'])
     for n in nodes:
@@ -245,6 +258,16 @@ def _merge_nodes_in_MultiGraph(G, nodes):
 
 
 def merge_similar_nodes(G):
+    """
+    WARNING: Changes G
+    Merges all nodes in G that are similar and are not conflicting.
+    All edges and their data are preserved.
+    If two nodes are merged, the resulting node's id is the id that has the most counts.
+    If u and v are merged and the resulting node's id is u:
+                1. u's attribute count will be the sum of u and v's count.
+                2. node v and its attributes will be added as a new attribute to node u's attribute: 'contraction'
+    :param G: mx.MultiGraph
+    """
     sim = _name_similarity_graph(G)
     _clear_name_conflicts(sim)
     con_comps = nx.connected_components(sim)

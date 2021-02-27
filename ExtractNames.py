@@ -77,8 +77,9 @@ def get_character_names_stanford_server(text):  # using stanford
     """
     MUST have the Stanford CoreNLP server running
     NOTE source: https://github.com/nltk/nltk/wiki/Stanford-CoreNLP-API-in-NLTK
+
     :param text: raw text
-    :return: list of strings of all names (repetitions are not removed)
+    :return: list of strings, all the names (repetitions are not removed)
     """
     if text.isspace():
         return []

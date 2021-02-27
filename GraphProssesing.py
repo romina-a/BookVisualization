@@ -1,13 +1,20 @@
 import networkx as nx
 import matplotlib.pyplot as plt
 
+# TODO: remove the nodes that appear once with small time stamp/low degree (metadata)
+#  e.g.: Shakespeare
+
+# TODO plot log log degree distribution
+
 
 def find_highest_deg(G, k=-1):
     """
-    return k nodes with highest degree if k is -1, returns all degrees
-    :param G: the networkx graph
-    :param k:
-    :return: sorted list of tuples of the form (<node_id>, <node_degree>)
+    Returns k nodes with highest degree.
+    If k is -1, returns all degrees.
+
+    :param G: nx.MultiGraph
+    :param k: int
+    :return: sorted list of k tuples of the form (<node_id>, <node_degree>)
     """
     if k == -1:
         k = len(list(G))
@@ -18,7 +25,8 @@ def find_highest_deg(G, k=-1):
 def plot_degree_dist(G):
     """
     plots degree distribution of G
-    :param G: nx
+
+    :param G: nx.MultiGraph
     """
     degrees = [n[1] for n in find_highest_deg(G)]
     plt.plot(sorted(degrees, reverse=True))
@@ -27,10 +35,12 @@ def plot_degree_dist(G):
 
 def find_highest_pagerank(G, k=-1):
     """
-    return k nodes with highest pagerank if k is -1, returns all pageranks
-    :param G: nx.MultiGraph the networkx graph
+    Returns k nodes with highest pagerank.
+    If k is -1, returns all pageranks.
+
+    :param G: nx.MultiGraph
     :param k: int
-    :return: sorted list of tuples of the form (<node_id>, <node_pagerank>)
+    :return: sorted list of k tuples of the form (<node_id>, <node_pagerank>)
     """
     if k == -1:
         k = len(list(G))
@@ -43,15 +53,31 @@ def find_highest_pagerank(G, k=-1):
 def plot_pagerank_dist(G):
     """
     plots pagerank distribution of G
-    :param G: nx
+
+    :param G: nx.Multigraph
     """
     degrees = [n[1] for n in find_highest_pagerank(G)]
     plt.plot(sorted(degrees, reverse=True))
     plt.show()
 
 
-# TODO: do we need 'count' history?
+# TODO: do we need 'count' history to take into account 'count' between t1 and t2?
 def create_snapshot(G, t1, t2):
+    """
+    Returns an nx.multiGraph (snapshot) that is a subset of the graph G:
+            The snapshot contains all nodes
+                and the edges that appeared within t1 and t2 time span:
+            The graph attributes are preserved.
+            All the nodes and node attributes are preserved.
+            All edges with t1<='time'<t2 are contained in snapshot.
+            All other edges are removed.
+
+    :param G: nx.MultiGraph, attributes used:
+                                    -edge attributes: 'time'
+    :param t1: int, minimum edge 'time' to include.
+    :param t2: int, maximum edge 'time' to include. The last 'time'=t2-1
+    :return: nx.MultiGraph, the snapshot, attributes are the same as G
+    """
     snapshot = nx.create_empty_copy(G, with_data=True)
     selected_edges = [e for e in G.edges(data=True) if e[2]['time'] in range(t1, t2)]
     snapshot.add_edges_from(selected_edges)
@@ -60,6 +86,19 @@ def create_snapshot(G, t1, t2):
 
 # TODO: add x values based on the step size
 def pagerank_history_for_character(G, character_name, num_of_snapshots):
+    """
+    1. Creates num_of_snapshots equally distanced snapshots between 0 and 'end_time'.
+    2. Calculates page rank for all characters in each snapshot
+    3. Returns pagerank_history: a list of the node <character_name>'s pagerank
+            in each snap shot. len(pagerank_history) = num_of_snapshots
+
+    :param G: nx.MultiGraph, attributes used:
+                                -graph attributes: 'end_time'
+                                -edge attributes: 'time'
+    :param character_name: string, must be a node id in G
+    :param num_of_snapshots: int, the number of equally distanced snapshots.
+    :return: list of float, <character_name>'s pagerank history
+    """
     end = G.graph['end_time']
     step = max(end // (num_of_snapshots - 1), 1)
     pagerank_history = []
@@ -76,15 +115,16 @@ def draw_pagerank_by_time_for_character(G, character_name, num_of_snapshots):
     plt.show()
 
 
-def top5_pagerank_history(G, num_of_snapshots):
-    top5 = find_highest_pagerank(G, k=5)
-    for char in top5:
+def topk_pagerank_history(G, num_of_snapshots, k):
+    topk = find_highest_pagerank(G, k=k)
+    for char in topk:
         history = pagerank_history_for_character(G, char[0], num_of_snapshots)
         plt.plot(history, label=char[0] + "-overall page rank:{0:6.2f}".format(char[1]))
         plt.ylabel('Page Rank')
         plt.xlabel('time')
     plt.legend()
     plt.show()
+
 
 
 # def multi_to_weighted(G):

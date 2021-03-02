@@ -7,7 +7,7 @@ MAX_DIST_DEFAULT = 10
 # This is the layout for drawing the graphs.
 # It sit set here, because if we set it when we want to draw the graph, each time it changes
 # and the snapshots will not be visualized the way we want (with nodes in fixed positions)
-LAYOUT_DEFAULT = 'spring'
+LAYOUT_DEFAULT = 'kamada_kawai'
 
 layout_options = {
     'spring': nx.spring_layout,
@@ -112,10 +112,9 @@ def create_character_MultiGraph(book_address, max_dist=MAX_DIST_DEFAULT, layout=
 def _names_similar(name1, name2):
     """
     gets two names and returns True if they (probably) represent the same person
-
     :param name1: string
     :param name2: string
-    :return: bool, true if strings are the same person
+    :return: true if strings are the same person
     """
     name1_lower_list = name1.lower().split()
     name2_lower_list = name2.lower().split()
@@ -140,31 +139,32 @@ def _names_similar(name1, name2):
     if hn1.last != '' and hn2.last != '' and hn1.last != hn2.last:
         return False
     # title
-    if hn1.title in ['mrs'] and hn2.title in ['ms', 'miss']:
+    if hn1.title in ['mrs.'] and hn2.title in ['ms.', 'miss']:
         return False
-    if hn2.title in ['mrs'] and hn1.title in ['ms', 'miss']:
+    if hn2.title in ['mrs.'] and hn1.title in ['ms.', 'miss']:
         return False
     # title - honorifics - kinship
-    if hn1.title in ['mr', 'sir', 'uncle', "master",
+    if hn1.title in ['mr.', 'sir', 'uncle', "master",
                      "gentleman", "sire", "dad", "father",
                      "grandpa", "lord", "brother",
                      "nephew", "king", "prince"] and \
-            hn2.title in ['ms', 'miss', "mrs",
-                          "mistress", "madam", "maam",
+            hn2.title in ['ms.', 'miss', "mrs.",
+                          "mistress", "madam", "madame", "maam",
                           "mom", "mother", "grandma", "granny", "dame", "lady",
                           "sister", "niece", "queen", "princess"]:
         return False
-    if hn2.title in ['mr', 'sir', 'uncle',
+    if hn2.title in ['mr.', 'sir', 'uncle',
                      "master", "gentleman", "sire",
                      "dad", "father", "grandpa",
                      "lord", "brother",
                      "nephew", "king", "prince"] and \
-            hn1.title in ['ms', 'miss', "mrs",
-                          "mistress", "madam", "maam",
+            hn1.title in ['ms.', 'miss', "mrs.",
+                          "mistress", "madam", "madame", "maam",
                           "mom", "mother", "grandma", "granny", "dame", "lady",
                           "sister", "niece", "queen", "princess"]:
         return False
     return True
+
 
 
 # TODO is this correct? why two similar for loops?
@@ -190,14 +190,12 @@ def _name_similarity_graph(G):
     return G_sim
 
 
-# TODO this is simple, improve
 def _names_conflict(name1, name2):
     """
     returns True if the two words CANNOT be the same person
-
-    :param name1: string
-    :param name2: string
-    :return: bool, True if strings can not be the same person
+       :param name1: string
+       :param name2: string
+       :return: true if strings can not be the same person
     """
 
     hn1 = HumanName(name1.lower())
@@ -206,11 +204,30 @@ def _names_conflict(name1, name2):
     # if both names have first and last and at least one does not match return True
     if hn1.first != '' and hn2.first != '' and hn1.last != '' and hn2.last != '':
         return not (hn1.first == hn2.first and hn1.last == hn2.last)
-
-    # if the titles exist and genders dont match return True
-    if hn1.title in ['Mrs.'] and hn2.title in ['Ms.', 'Miss']:
+    # title
+    if hn1.title in ['mrs.'] and hn2.title in ['ms.', 'miss']:
         return True
-    if hn2.title in ['Mrs.'] and hn1.title in ['Ms.', 'Miss']:
+    if hn2.title in ['mrs.'] and hn1.title in ['ms.', 'miss']:
+        return True
+    # title - honorifics - kinship
+    if hn1.title in ['mr.', 'sir', 'uncle', "master",
+                     "gentleman", "sire", "dad", "father",
+                     "grandpa", "lord", "brother",
+                     "nephew", "king", "prince"] and \
+            hn2.title in ['ms.', 'miss', "mrs.",
+                          "mistress", "madam", "madame", "maam",
+                          "mom", "mother", "grandma", "granny", "dame", "lady",
+                          "sister", "niece", "queen", "princess"]:
+        return True
+    if hn2.title in ['mr.', 'sir', 'uncle',
+                     "master", "gentleman", "sire",
+                     "dad", "father", "grandpa",
+                     "lord", "brother",
+                     "nephew", "king", "prince"] and \
+            hn1.title in ['ms.', 'miss', "mrs.",
+                          "mistress", "madam", "madame", "maam",
+                          "mom", "mother", "grandma", "granny", "dame", "lady",
+                          "sister", "niece", "queen", "princess"]:
         return True
 
     # otherwise no conflict

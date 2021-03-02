@@ -83,7 +83,7 @@ def get_character_names_stanford_server(text):  # using stanford
     """
     if text.isspace():
         return []
-    # print("text:", text)
+    print("text:", text)
     SERVER_URL = 'http://localhost:9000'
     tokenizer = CoreNLPParser(url=SERVER_URL)
     ner_tagger = CoreNLPParser(url=SERVER_URL, tagtype='ner')
@@ -127,26 +127,3 @@ def get_character_names_stanza_CoNLL03(text):
     doc = nlp(text)
     persons = [ent.text for ent in doc.entities if ent.type == 'PER']
     return persons
-
-
-def filtering(text):
-    text = text.replace("\t", " ")
-    text = text.replace("\n", " ")
-    text = text.replace("!", " ! ")
-    text = text.replace(":", " : ")
-    text = text.replace("Mr.", "Mr")
-    text = text.replace("Ms.", "Ms")
-    text = text.replace("Mrs.", "Mrs")
-    text = text.replace(".", " . ")
-    text = text.replace("?", " ? ")
-    text = text.replace(")", " ) ")
-    text = text.replace("(", " ( ")
-    text = text.replace("'s", " ")
-    text = text.replace('"', ' " ')
-    text = text.replace("'", " ' ")
-    text = text.replace("`", " ` ")
-    text = text.replace(",", " , ")
-    text = text.replace(";", " ; ")
-    text = text.replace("-", " ")
-    text = text.replace("_", " ")
-    return text

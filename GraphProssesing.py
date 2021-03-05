@@ -1,12 +1,37 @@
 import networkx as nx
 import matplotlib.pyplot as plt
+import numpy as np
 
 # TODO: remove the nodes that appear once with small time stamp/low degree (metadata)
 #  e.g.: Shakespeare
 
+
+def create_snapshot(G, t1, t2):
+    """
+    Returns an nx.multiGraph (snapshot) that is a subset of the graph G:
+            The snapshot contains all nodes
+                and the edges that appeared within t1 and t2 time span:
+            The graph attributes are preserved.
+            All the nodes and node attributes are preserved.
+            All edges with t1<='time'<t2 are contained in snapshot.
+            All other edges are removed.
+
+    :param G: nx.MultiGraph, attributes used:
+                                    -edge attributes: 'time'
+    :param t1: int, minimum edge 'time' to include.
+    :param t2: int, maximum edge 'time' to include. The last 'time'=t2-1
+    :return: nx.MultiGraph, the snapshot, attributes are the same as G
+    """
+    snapshot = nx.create_empty_copy(G, with_data=True)
+    for (node, data) in snapshot.nodes(data=True):
+        data['times'] = [i for i in data['times'] if i in range(t1, t2)]
+        data['count'] = len(data['times'])
+    selected_edges = [e for e in G.edges(data=True) if e[2]['time'] in range(t1, t2)]
+    snapshot.add_edges_from(selected_edges)
+    return snapshot
+
+
 # TODO plot log log degree distribution
-
-
 def find_highest_deg(G, k=-1):
     """
     Returns k nodes with highest degree.
@@ -29,6 +54,7 @@ def plot_degree_dist(G):
     :param G: nx.MultiGraph
     """
     degrees = [n[1] for n in find_highest_deg(G)]
+    plt.subplot(1, 2, 1)
     plt.plot(sorted(degrees, reverse=True))
     plt.show()
 
@@ -59,29 +85,6 @@ def plot_pagerank_dist(G):
     degrees = [n[1] for n in find_highest_pagerank(G)]
     plt.plot(sorted(degrees, reverse=True))
     plt.show()
-
-
-# TODO: do we need 'count' history to take into account 'count' between t1 and t2?
-def create_snapshot(G, t1, t2):
-    """
-    Returns an nx.multiGraph (snapshot) that is a subset of the graph G:
-            The snapshot contains all nodes
-                and the edges that appeared within t1 and t2 time span:
-            The graph attributes are preserved.
-            All the nodes and node attributes are preserved.
-            All edges with t1<='time'<t2 are contained in snapshot.
-            All other edges are removed.
-
-    :param G: nx.MultiGraph, attributes used:
-                                    -edge attributes: 'time'
-    :param t1: int, minimum edge 'time' to include.
-    :param t2: int, maximum edge 'time' to include. The last 'time'=t2-1
-    :return: nx.MultiGraph, the snapshot, attributes are the same as G
-    """
-    snapshot = nx.create_empty_copy(G, with_data=True)
-    selected_edges = [e for e in G.edges(data=True) if e[2]['time'] in range(t1, t2)]
-    snapshot.add_edges_from(selected_edges)
-    return snapshot
 
 
 # TODO: add x values based on the step size
@@ -126,6 +129,48 @@ def topk_pagerank_history(G, num_of_snapshots, k):
     plt.show()
 
 
+def k_important_through_time(G, k, num_of_snapshots):
+    """
+    returns most important characters in each snapshots
+
+    :param G:
+    :param k:
+    :param num_of_snapshots:
+    :return: list of #num_of_snapshots sets of k strings
+    """
+    end = G.graph['end_time']
+    step = max(end // (num_of_snapshots - 1), 1)
+    importants = []
+    for i in range(0, end, step):
+        snap = create_snapshot(G, i, i + step)
+        importants.append(set(find_highest_pagerank(snap, k)))
+    return importants
+
+
+def fluidity_plot(G, k, num_of_snapshots):
+    imp = k_important_through_time(G, k, num_of_snapshots)
+    change = []
+    prevs = set()
+    for s in imp:
+        curs = set([i[1] for i in s])
+        change.append(len(curs ^ prevs) // 2)
+        prevs = curs
+    plt.plot(change)
+    plt.ylabel('change')
+    plt.xlabel('time')
+    # plt.savefig("./plot.pdf")
+    plt.show()
+
+
+def central_characters(G):
+    A = find_highest_pagerank(G)
+    sum = 0
+    B = []
+    for i in A:
+        B.append(i)
+        sum += i[1]
+        if sum > 0.5: break
+    return B
 
 # def multi_to_weighted(G):
 #     """

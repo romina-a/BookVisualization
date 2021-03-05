@@ -66,6 +66,7 @@ def create_character_MultiGraph(book_address, max_dist=MAX_DIST_DEFAULT, layout=
             each node id is a unique character name
             -node attributes (G.nodes(data=True)[<node_id>]):
                              'count': int, total #times the character name was found in the book
+                             'times': list of int (sorted), each time the node appears
                              'pos': tuple, (x,y) set based on the layout. For drawing.
             -edge attributes (G.edges(data=True)[<u_id>,<v_id>, key]]/G.get_edge_data(<u_id>,<v_id>)):
                              'time': time stamps representing when u and v appeared closer than max_dist
@@ -95,8 +96,10 @@ def create_character_MultiGraph(book_address, max_dist=MAX_DIST_DEFAULT, layout=
                 if not G.has_node(name):
                     G.add_node(name)
                     G.nodes[name]['count'] = 1
+                    G.nodes[name]['times'] = [time]
                 else:
                     G.nodes[name]['count'] += 1
+                    G.nodes[name]['times'].append(time)
 
             _draw_edges(G, new_names, cashed_names, time)
             time += 1
@@ -122,6 +125,8 @@ def _names_similar(name1, name2):
     if len([common for common in name1_lower_list if common in name2_lower_list]) == 0:
         return False
     # subsets
+
+    #TODO: Sadegh Kaveh = Kaveh Sadegh which is wrong
     if len(set(name1_lower_list).intersection(set(name2_lower_list))) == len(name1_lower_list):
         return True
     if len(set(name1_lower_list).intersection(set(name2_lower_list))) == len(name2_lower_list):
@@ -164,7 +169,6 @@ def _names_similar(name1, name2):
                           "sister", "niece", "queen", "princess"]:
         return False
     return True
-
 
 
 # TODO is this correct? why two similar for loops?
@@ -270,7 +274,11 @@ def _merge_nodes_in_MultiGraph(G, nodes):
     main = max(nodes, key=lambda x: G.nodes[x]['count'])
     for n in nodes:
         if n == main: continue
+        # Add merged nod info to main node info
         G.nodes[main]['count'] += G.nodes[n]['count']
+        for i in G.nodes[n]['times']: G.nodes[main]['times'].append(i)
+        G.nodes[main]['times'] = sorted(G.nodes[main]['times'])
+        # merge nodes
         nx.contracted_nodes(G, main, n, self_loops=False, copy=False)
 
 

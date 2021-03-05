@@ -4,8 +4,7 @@ import plotly.graph_objects as go
 
 # TODO add more hover points for edges, improve hover text (show u and v)
 # TODO degree is not right for weighted graph (we might not need a weighted graph version!)
-# TODO show node names in hover
-def _make_node_trace(G):
+def _make_node_trace(G, node_colors=None):
     node_x = []
     node_y = []
     for node in G.nodes():
@@ -35,16 +34,18 @@ def _make_node_trace(G):
             ),
             line_width=0.1))
 
-    node_adjacencies = []
     node_text = []
     for i, adjacencies in enumerate(G.adjacency()):
-        node_adjacencies.append(len(adjacencies[1]))
         node = list(G)[i]
         count_str = "--" if 'count' not in G.nodes(data=True)[node] else str(G.nodes(data=True)[node]['count'])
-        node_text.append('# of connections: ' + str(len(adjacencies[1])) +
+        color_scale = "--" if node_colors is None else str(node_colors[i])
+        node_text.append(node+':'
+                         '# of connections: ' + str(len(adjacencies[1])) +
                          '\n/ count: ' + count_str +
-                         '\n/ degree: ' + str(G.degree(node)))
-    node_trace.marker.color = node_adjacencies
+                         '\n/ degree: ' + str(G.degree(node)) +
+                         '\n/ rank: ' + color_scale)
+    # Scale the edge color based on node_colors if not provided, degree is used
+    node_trace.marker.color = node_colors if node_colors is not None else [i[1] for i in G.degree()]
     node_trace.hovertext = node_text
     node_trace.text = list(G)
     return node_trace
@@ -122,7 +123,10 @@ def _make_edge_traces_simple(G):
     return edge_trace
 
 
-def draw_graph_plotly(G, graph_title="", graph_type="multi"):
+def draw_graph_plotly(G, graph_title="",
+                      graph_type="multi",
+                      save_adr=None,
+                      node_colors=None):
     """
         WARNING: You must set the layout first
         WARNING: Degree is not right for weighted graphs
@@ -131,6 +135,8 @@ def draw_graph_plotly(G, graph_title="", graph_type="multi"):
         :param G: nx.Graph
         :param graph_title: string, the title is shown on top left of the graphs
         :param graph_type: type of G, options: "multi", "weighted", "simple"
+        :param save_adr: string, full address to save the figure (e.g. "./figures/figure.png")
+        :param node_colors: list of int, determine the scale for node colors if not provided: degree
     """
 
     if graph_type.lower() == "multi":
@@ -140,7 +146,7 @@ def draw_graph_plotly(G, graph_title="", graph_type="multi"):
     else:
         edge_traces = _make_edge_traces_simple(G)
 
-    node_trace = _make_node_trace(G)
+    node_trace = _make_node_trace(G, node_colors=node_colors)
 
     layout = go.Layout(
         title='<br>' + graph_title,
@@ -156,5 +162,6 @@ def draw_graph_plotly(G, graph_title="", graph_type="multi"):
     fig.update_layout(showlegend=False)
     fig.update_xaxes(showticklabels=False)
     fig.update_yaxes(showticklabels=False)
-
+    if save_adr is not None:
+        fig.write_image(save_adr)
     fig.show()

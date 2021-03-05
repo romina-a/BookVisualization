@@ -12,9 +12,9 @@ import argparse
 
 # 1. determine the book address
 # book_address = "./Data/HarryPotter/Cleaned/J K Rowling___1. Harry Potter and the Philosophers Stone.txt"
-# book_address = "./Data/Gutenberg/txt/Charles Dickens___Oliver Twist.txt"
+book_address = "./Data/Gutenberg/txt/Charles Dickens___Oliver Twist.txt"
 # book_address = "./Data/Gutenberg/txt/Charles Dickens___A Christmas Carol.txt"
-book_address = "Data/Gutenberg/txt/Sir Arthur Conan Doyle___The Hound of the Baskervilles.txt"
+# book_address = "Data/Gutenberg/txt/Sir Arthur Conan Doyle___The Hound of the Baskervilles.txt"
 
 
 def extract_book_name_from_adr(adr):

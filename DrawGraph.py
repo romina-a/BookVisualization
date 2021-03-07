@@ -126,7 +126,8 @@ def _make_edge_traces_simple(G):
 def draw_graph_plotly(G, graph_title="",
                       graph_type="multi",
                       save_adr=None,
-                      node_colors=None):
+                      show=True,
+                      node_colors=None,):
     """
         WARNING: You must set the layout first
         WARNING: Degree is not right for weighted graphs
@@ -136,6 +137,7 @@ def draw_graph_plotly(G, graph_title="",
         :param graph_title: string, the title is shown on top left of the graphs
         :param graph_type: type of G, options: "multi", "weighted", "simple"
         :param save_adr: string, full address to save the figure (e.g. "./figures/figure.png")
+        :param show: bool, if True, shows the graph in the browser
         :param node_colors: list of int, determine the scale for node colors if not provided: degree
     """
 
@@ -164,4 +166,5 @@ def draw_graph_plotly(G, graph_title="",
     fig.update_yaxes(showticklabels=False)
     if save_adr is not None:
         fig.write_image(save_adr)
-    fig.show()
+    if show:
+        fig.show()

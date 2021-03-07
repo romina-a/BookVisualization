@@ -48,15 +48,23 @@ def find_highest_deg(G, k=-1):
     return sorted_nodes
 
 
-def plot_degree_dist(G):
+def plot_degree_dist(G, loglog=True):
     """
     plots degree distribution of G
 
     :param G: nx.MultiGraph
     """
-    degrees = [n[1] for n in find_highest_deg(G)]
-    plt.subplot(1, 2, 1)
-    plt.plot(sorted(degrees, reverse=True))
+    degree_hist = nx.degree_histogram(G)
+    degree_hist = list(zip([i for i in range(len(degree_hist))], degree_hist))
+    degree_hist = dict([i for i in degree_hist if i[1] > 0])
+    x = list(degree_hist.keys())
+    y = list(degree_hist.values())
+    if loglog is True:
+        x = np.log(x)
+        y = np.log(y)
+    plt.scatter(x=x, y=y, marker='.')
+    plt.xlabel("frequency")
+    plt.ylabel("degree")
     plt.show()
 
 
@@ -199,6 +207,8 @@ def draw_graph_through_time(G, num_of_snapshots, pagerank_threshold=0.5):
     for i, snap in enumerate(snaps):
         DrawGraph.draw_graph_plotly(snap.subgraph(importants),
                                     save_adr=f"./graph{i+1}.pdf")
+
+
 
 # def multi_to_weighted(G):
 #     """

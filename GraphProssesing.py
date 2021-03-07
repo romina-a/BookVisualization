@@ -1,5 +1,6 @@
 import networkx as nx
 import matplotlib.pyplot as plt
+import DrawGraph
 import numpy as np
 
 # TODO: remove the nodes that appear once with small time stamp/low degree (metadata)
@@ -118,7 +119,14 @@ def draw_pagerank_by_time_for_character(G, character_name, num_of_snapshots):
     plt.show()
 
 
-def topk_pagerank_history(G, num_of_snapshots, k):
+def plot_topk_pagerank_history(G, num_of_snapshots, k):
+    """
+    returns topk most important characters and plots their pagerank through time
+    :param G:
+    :param num_of_snapshots:
+    :param k:
+    :return:
+    """
     topk = find_highest_pagerank(G, k=k)
     for char in topk:
         history = pagerank_history_for_character(G, char[0], num_of_snapshots)
@@ -131,7 +139,7 @@ def topk_pagerank_history(G, num_of_snapshots, k):
 
 def k_important_through_time(G, k, num_of_snapshots):
     """
-    returns most important characters in each snapshots
+    returns k most important characters in each snapshots
 
     :param G:
     :param k:
@@ -162,15 +170,35 @@ def fluidity_plot(G, k, num_of_snapshots):
     plt.show()
 
 
-def central_characters(G):
+def central_characters(G, page_rank_threshold=0.5):
+    """
+    returns list: [(<name>,<pagerank>),...] for the central part
+    :param G:
+    :param page_rank_threshold:
+    :return:
+    """
     A = find_highest_pagerank(G)
     sum = 0
     B = []
     for i in A:
         B.append(i)
         sum += i[1]
-        if sum > 0.5: break
+        if sum > page_rank_threshold: break
     return B
+
+
+def draw_graph_through_time(G, num_of_snapshots, pagerank_threshold=0.5):
+    end = G.graph['end_time']
+    step = max(end // (num_of_snapshots - 1), 1)
+    importants = set()
+    snaps = []
+    for i in range(0, end, step):
+        snap = create_snapshot(G, i, i + step)
+        snaps.append(snap)
+        importants = importants.union(set(dict(central_characters(snap, pagerank_threshold))))
+    for i, snap in enumerate(snaps):
+        DrawGraph.draw_graph_plotly(snap.subgraph(importants),
+                                    save_adr=f"./graph{i+1}.pdf")
 
 # def multi_to_weighted(G):
 #     """

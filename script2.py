@@ -83,7 +83,7 @@ def do_all(book_adr):
 
     GraphProssesing.plot_degree_dist(G)
 
-    GraphProssesing.topk_pagerank_history(G, num_of_snapshots=30, k=3)
+    GraphProssesing.plot_topk_pagerank_history(G, num_of_snapshots=30, k=3)
 
 
 if __name__ == '__main__':

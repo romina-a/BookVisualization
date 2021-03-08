@@ -1,6 +1,7 @@
 from nameparser.parser import HumanName
 import networkx as nx
 from ExtractNames import get_character_names_stanford_server as extract_names
+import os
 
 MAX_DIST_DEFAULT = 10
 
@@ -26,6 +27,13 @@ def set_layout(G, layout):
     """
     pos = layout_options[layout](G)
     nx.set_node_attributes(G, pos, 'pos')
+
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~ Helper ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+def extract_book_name_from_adr(adr):
+    file_name = os.path.split(adr)[-1]
+    name = os.path.splitext(file_name)[0]
+    return name
 
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~Graph creation~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -107,6 +115,7 @@ def create_character_MultiGraph(book_address, max_dist=MAX_DIST_DEFAULT, layout=
             cashed_names = new_names
             text = ""
     G.graph['end_time'] = time
+    G.graph['name'] = extract_book_name_from_adr(book_address)
     set_layout(G, layout)
     return G
 

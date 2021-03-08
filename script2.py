@@ -1,4 +1,4 @@
-from CharacterNames import create_character_MultiGraph, merge_similar_nodes
+from CharacterNames import create_character_MultiGraph, merge_similar_nodes, extract_book_name_from_adr
 from DrawGraph import draw_graph_plotly as draw
 
 import time
@@ -15,12 +15,6 @@ import argparse
 book_address = "./Data/Gutenberg/txt/Charles Dickens___Oliver Twist.txt"
 # book_address = "./Data/Gutenberg/txt/Charles Dickens___A Christmas Carol.txt"
 # book_address = "Data/Gutenberg/txt/Sir Arthur Conan Doyle___The Hound of the Baskervilles.txt"
-
-
-def extract_book_name_from_adr(adr):
-    file_name = os.path.split(adr)[-1]
-    name = os.path.splitext(file_name)[0]
-    return name
 
 
 def do_all(book_adr):

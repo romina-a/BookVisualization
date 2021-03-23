@@ -1,7 +1,6 @@
 from nameparser.parser import HumanName
 import networkx as nx
 from ExtractNames import get_character_names_stanford_server as extract_names
-import os
 
 MAX_DIST_DEFAULT = 10
 
@@ -20,20 +19,13 @@ layout_options = {
 
 def set_layout(G, layout):
     """
-    Sets 'pos' attribute on G nodes based on the layout.
+    Sets 'pos' attribute on G_Sim nodes based on the layout.
 
     :param G: nx Graph of any type
     :param layout: string, options: 'spring','circular','kamada_kawai','shell'
     """
     pos = layout_options[layout](G)
     nx.set_node_attributes(G, pos, 'pos')
-
-
-# ~~~~~~~~~~~~~~~~~~~~~~~~~ Helper ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-def extract_book_name_from_adr(adr):
-    file_name = os.path.split(adr)[-1]
-    name = os.path.splitext(file_name)[0]
-    return name
 
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~Graph creation~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -69,14 +61,14 @@ def create_character_MultiGraph(book_address, max_dist=MAX_DIST_DEFAULT, layout=
     """
     returns an nx.MultiGraph (https://networkx.org/documentation/stable/reference/classes/multigraph.html)
     with the following properties:
-            -graph attributes (G.graph()):
+            -graph attributes (G_Sim.graph()):
                              'end_time': int, the last time_stamp
             each node id is a unique character name
-            -node attributes (G.nodes(data=True)[<node_id>]):
+            -node attributes (G_Sim.nodes(data=True)[<node_id>]):
                              'count': int, total #times the character name was found in the book
                              'times': list of int (sorted), each time the node appears
                              'pos': tuple, (x,y) set based on the layout. For drawing.
-            -edge attributes (G.edges(data=True)[<u_id>,<v_id>, key]]/G.get_edge_data(<u_id>,<v_id>)):
+            -edge attributes (G_Sim.edges(data=True)[<u_id>,<v_id>, key]]/G_Sim.get_edge_data(<u_id>,<v_id>)):
                              'time': time stamps representing when u and v appeared closer than max_dist
 
     :param max_dist: int, distance between two words (#sentences) determining a relation (i.e. a page)
@@ -115,7 +107,6 @@ def create_character_MultiGraph(book_address, max_dist=MAX_DIST_DEFAULT, layout=
             cashed_names = new_names
             text = ""
     G.graph['end_time'] = time
-    G.graph['name'] = extract_book_name_from_adr(book_address)
     set_layout(G, layout)
     return G
 
@@ -186,7 +177,7 @@ def _name_similarity_graph(G):
     uses _names_similar to check similarity
 
     :param G: nx.MultiGraph,
-    :return: nx.Graph, nodes ids are the same as G,
+    :return: nx.Graph, nodes ids are the same as G_Sim,
                        connected nodes are (probably) similar
     """
     G_sim = nx.Graph()
@@ -196,8 +187,8 @@ def _name_similarity_graph(G):
         for v in list(G):
             if _names_similar(u, v) and u != v:
                 G_sim.add_edge(u, v, c=1)
-    # for u in list(G):
-    #     for v in list(G):
+    # for u in list(G_Sim):
+    #     for v in list(G_Sim):
     #         if _names_similar(u, v) and u != v:
     #             G_sim.add_edge(u, v, c=1)
     return G_sim
@@ -214,9 +205,7 @@ def _names_conflict(name1, name2):
     hn1 = HumanName(name1.lower())
     hn2 = HumanName(name2.lower())
 
-    # if both names have first and last and at least one does not match return True
-    if hn1.first != '' and hn2.first != '' and hn1.last != '' and hn2.last != '':
-        return not (hn1.first == hn2.first and hn1.last == hn2.last)
+
     # title
     if hn1.title in ['mrs.'] and hn2.title in ['ms.', 'miss']:
         return True
@@ -242,6 +231,14 @@ def _names_conflict(name1, name2):
                           "mom", "mother", "grandma", "granny", "dame", "lady",
                           "sister", "niece", "queen", "princess"]:
         return True
+
+    # if both names have first and last and at least one does not match return True
+    if hn1.first != '' and hn2.first != '' and hn1.last != '' and hn2.last != '' and hn1.first == hn2.last:
+        return False
+    if hn1.first != '' and hn2.first != '' and hn1.last != '' and hn2.last != '' and hn2.first == hn1.last:
+        return False
+    if hn1.first != '' and hn2.first != '' and hn1.last != '' and hn2.last != '':
+        return not (hn1.first == hn2.first and hn1.last == hn2.last)
 
     # otherwise no conflict
     return False
@@ -272,13 +269,13 @@ def _clear_name_conflicts(G_sim):
 
 def _merge_nodes_in_MultiGraph(G, nodes):
     """
-    WARNING: Changes G
+    WARNING: Changes G_Sim
     Merges all the nodes,
     the resulting node's name is the name with the most count,
     all edges preserved
 
     :param G: nx.MultiGraph, its nodes will be merged
-    :param nodes: list of strings, the node ids of G to be merged
+    :param nodes: list of strings, the node ids of G_Sim to be merged
     """
     main = max(nodes, key=lambda x: G.nodes[x]['count'])
     for n in nodes:
@@ -293,8 +290,8 @@ def _merge_nodes_in_MultiGraph(G, nodes):
 
 def merge_similar_nodes(G):
     """
-    WARNING: Changes G
-    Merges all nodes in G that are similar and are not conflicting.
+    WARNING: Changes G_Sim
+    Merges all nodes in G_Sim that are similar and are not conflicting.
     All edges and their data are preserved.
     If two nodes are merged, the resulting node's id is the id that has the most counts.
     If u and v are merged and the resulting node's id is u:

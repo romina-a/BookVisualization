@@ -72,7 +72,8 @@ def get_character_names_stanford(text, PATH="./stanford-ner"):  # using stanford
 
 
 # TODO force include prefixes
-# TODO use filtering
+
+
 def get_character_names_stanford_server(text):  # using stanford
     """
     MUST have the Stanford CoreNLP server running
@@ -83,7 +84,7 @@ def get_character_names_stanford_server(text):  # using stanford
     """
     if text.isspace():
         return []
-    print("text:", text)
+    # print("text:", text)
     SERVER_URL = 'http://localhost:9000'
     tokenizer = CoreNLPParser(url=SERVER_URL)
     ner_tagger = CoreNLPParser(url=SERVER_URL, tagtype='ner')

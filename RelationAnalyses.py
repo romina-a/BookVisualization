@@ -2,13 +2,14 @@ import pandas as pd
 import os
 import GraphProssesing
 import networkx as nx
+import plotly.express as px
 
 
 def get_rows_with_subjects(subjects):
     return df[pd.DataFrame(df.subjects_list.tolist()).isin(subjects).any(1).values]
 
 
-def get_categories(book_name):
+def get_book_subjects(book_name):
     return df.loc[df['name'] == book_name]['subjects_list'].values[0]
 
 
@@ -20,11 +21,13 @@ def get_all_subjects():
                 all_subjects[j] += 1
             else:
                 all_subjects[j] = 1
+    return [(i, all_subjects[i]) for i in sorted(all_subjects, key=lambda x:all_subjects[x], reverse=True)]
 
 
 if os.path.exists("./Metadata_with_graph_info.csv"):
     df = pd.read_csv("./Metadata_with_graph_info.csv", converters={'subjects_list': eval})
 else:
+    print("didn't find Metadata_with_graph_info. Creating ...")
     df = pd.read_csv("./Metadata.csv", converters={'subjects_list': eval})
 
     df['graph_size'] = -1
@@ -48,3 +51,30 @@ else:
         df.loc[(df.name == name) & (df.author == author), 'fluidity_central'] = fluidity_central
         print(f"done {i}")
     df.to_csv("./Metadata_with_graph_info.csv")
+
+
+def get_sizes_for_repeated_subjects():
+    sdf = pd.DataFrame()
+    for tag, rep in get_all_subjects():
+        if rep >= 40:
+            n = get_rows_with_subjects([tag])[['graph_size', 'central_graph_size']]
+            n = n[n.graph_size != 0]
+            n['tag'] = tag
+            sdf = sdf.append(n)
+    return sdf
+
+
+def graph_size_box_plot(sdf):
+    fig = px.box(sdf, x="tag", y="graph_size",
+                 notched=True,  # used notched shape
+                 title="Box plot",
+                 hover_data=["tag"]  # add day column to hover data
+                 )
+    fig.show()
+
+
+def graph_size_mean_bar_plot(sdf):
+    a = sdf.groupby('tag').graph_size.mean().reset_index()
+    a.sort_values(by='graph_size', ascending=False)
+    fig = px.bar(a, x='tag', y='graph_size')
+    fig.show()

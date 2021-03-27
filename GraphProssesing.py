@@ -250,7 +250,7 @@ def plot_topk_pagerank_history(G, num_of_snapshots, k):
     plt.show()
 
 
-def plot_fluidity_total(G, num_of_snapshots, save_adr=""):
+def fluidity_total(G, num_of_snapshots, save_adr="", show=False):
     imp = degmorethanone_characters_through_time(G, num_of_snapshots)
     change = []
     prevs = set()
@@ -263,13 +263,12 @@ def plot_fluidity_total(G, num_of_snapshots, save_adr=""):
     plt.xlabel('time')
     if save_adr != "":
         plt.savefig(save_adr)
-    plt.show()
+    if show:
+        plt.show()
     return change
 
 
-def plot_fluidity_central(G, num_of_snapshots,
-                          pagerank_threshold=PAGERANK_THRESHOLD_DEFAULT,
-                          save_adr=""):
+def fluidity_central(G, num_of_snapshots, pagerank_threshold=PAGERANK_THRESHOLD_DEFAULT, save_adr="", show=False):
     imp = central_characters_through_time(G, num_of_snapshots,
                                           pagerank_threshold=pagerank_threshold)
     change = []
@@ -283,7 +282,8 @@ def plot_fluidity_central(G, num_of_snapshots,
     plt.xlabel('time')
     if save_adr != "":
         plt.savefig(save_adr)
-    plt.show()
+    if show:
+        plt.show()
     return change
 
 

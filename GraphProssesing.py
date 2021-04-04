@@ -307,7 +307,7 @@ def draw_graph_through_time(G, num_of_snapshots, pagerank_threshold=0.5):
         importants = importants.union(set(dict(find_central_characters(snap, pagerank_threshold))))
     for i, snap in enumerate(snaps):
         DrawGraph.draw_graph_plotly(snap.subgraph(importants),
-                                    save_adr=f"./graph{i + 1}.png", show=False)
+                                    save_adr=f"./graph{i + 1}.pdf")
 
 
 # ~~~~~~~~~~~~~~~~ information already in graph ~~~~~~~~~~~~~~~~~~~~~~~

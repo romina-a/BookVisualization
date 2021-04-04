@@ -162,3 +162,4 @@ def draw_graph_plotly(G, graph_title="", graph_type="multi", save_adr=None, node
     if save_adr is not None:
         fig.write_image(save_adr)
     fig.show()
+    return fig

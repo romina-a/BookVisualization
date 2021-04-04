@@ -4,7 +4,7 @@ import networkx as nx
 
 list = []
 G = nx.Graph()
-with open('./Data/metadata.csv', 'r') as file:
+with open('./Metadata.csv', 'r', encoding='cp1252') as file:
     reader = csv.reader(file)
     for row in reader:
         category_string = row[5]
@@ -42,4 +42,4 @@ for community in community_index:
     index_row = [list.index(row) for row in list if community in row]
     print(community_index[community], list[index_row[0]][1], community)
 
-nx.write_gpickle(G, './CategoriesGraph.gpickle')
+# nx.write_gpickle(G, './CategoriesGraph.gpickle')

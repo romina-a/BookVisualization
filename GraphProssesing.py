@@ -250,7 +250,7 @@ def plot_topk_pagerank_history(G, num_of_snapshots, k):
     plt.show()
 
 
-def fluidity_total(G, num_of_snapshots, save_adr="", show=False):
+def plot_fluidity_total(G, num_of_snapshots, save_adr=""):
     imp = degmorethanone_characters_through_time(G, num_of_snapshots)
     change = []
     prevs = set()
@@ -263,12 +263,13 @@ def fluidity_total(G, num_of_snapshots, save_adr="", show=False):
     plt.xlabel('time')
     if save_adr != "":
         plt.savefig(save_adr)
-    if show:
-        plt.show()
+    plt.show()
     return change
 
 
-def fluidity_central(G, num_of_snapshots, pagerank_threshold=PAGERANK_THRESHOLD_DEFAULT, save_adr="", show=False):
+def plot_fluidity_central(G, num_of_snapshots,
+                          pagerank_threshold=PAGERANK_THRESHOLD_DEFAULT,
+                          save_adr=""):
     imp = central_characters_through_time(G, num_of_snapshots,
                                           pagerank_threshold=pagerank_threshold)
     change = []
@@ -282,8 +283,7 @@ def fluidity_central(G, num_of_snapshots, pagerank_threshold=PAGERANK_THRESHOLD_
     plt.xlabel('time')
     if save_adr != "":
         plt.savefig(save_adr)
-    if show:
-        plt.show()
+    plt.show()
     return change
 
 
@@ -307,7 +307,7 @@ def draw_graph_through_time(G, num_of_snapshots, pagerank_threshold=0.5):
         importants = importants.union(set(dict(find_central_characters(snap, pagerank_threshold))))
     for i, snap in enumerate(snaps):
         DrawGraph.draw_graph_plotly(snap.subgraph(importants),
-                                    save_adr=f"./graph{i + 1}.pdf")
+                                    save_adr=f"./graph{i + 1}.png", show=False)
 
 
 # ~~~~~~~~~~~~~~~~ information already in graph ~~~~~~~~~~~~~~~~~~~~~~~

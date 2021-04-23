@@ -6,125 +6,103 @@ import RelationAnalyses
 
 df = RelationAnalyses.df
 
-# ~~~~~~~~~~~~~~~~~~~~~~ Authors ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-df_repeated_authors = RelationAnalyses.select_repeated(df, 'author', 50)
-df_repeated_authors = df_repeated_authors[
-    (df_repeated_authors.graph_size > -1) & (df_repeated_authors.central_graph_size) > 0]
-df_repeated_authors_for_means = df_repeated_authors.groupby('author').mean().reset_index().sort_values(by='graph_size',
-                                                                                                       ascending=False)
-# ~~~~~~~~~ box plots together ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-fig = go.Figure()
-fig.add_trace(go.Box(
-    y=df_repeated_authors.graph_size.values,
-    x=df_repeated_authors.author.values,
-    name='graph_size',
-    marker_color='#3D9970'
-))
-fig.add_trace(go.Box(
-    y=df_repeated_authors.central_graph_size.values,
-    x=df_repeated_authors.author.values,
-    name='central_graph_size',
-    marker_color='#FF4136'
-))
-fig.add_trace(go.Box(
-    y=df_repeated_authors.graph_size_ratio.values,
-    x=df_repeated_authors.author.values,
-    name='ratio',
-    marker_color='#FF851B'
-))
-fig.update_layout(
-    yaxis_title='size',
-    boxmode='group'  # group together boxes of the different traces for each value of x
-)
-fig.show()
-
-# ~~~~~~~~~~~~~~~~~~~ Fluidity ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~```
-
-fig = make_subplots(rows=2, cols=1, shared_xaxes=True,
-                    vertical_spacing=0.05)
-fig.add_trace(go.Box(
-    y=df_repeated_authors.fluidity_total.values,
-    x=df_repeated_authors.author.values,
-    name='fluidity total',
-    marker_color='#3D9970',
-    # boxpoints=False
-), row=1, col=1)
-fig.add_trace(go.Box(
-    y=df_repeated_authors.fluidity_central.values,
-    x=df_repeated_authors.author.values,
-    name='fluidity central',
-    marker_color='#FF4136',
-    # boxpoints=False
-), row=2, col=1)
-fig.update_yaxes(title_text="fluidity total", row=1, col=1)
-fig.update_yaxes(title_text="fluidity central", row=2, col=1)
-fig.update_layout(height=750, width=750)
-fig.show()
-
-# ~~~~~~~~~~~~~ Normalized fluidity ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-fig = make_subplots(rows=2, cols=1, shared_xaxes=True,
-                    vertical_spacing=0.05)
-fig.add_trace(go.Box(
-    y=df_repeated_authors.fluidity_total.values / df_repeated_authors.graph_size.values,
-    x=df_repeated_authors.author.values,
-    name='fluidity total',
-    marker_color='#3D9970',
-    # boxpoints=False
-), row=1, col=1)
-fig.add_trace(go.Box(
-    y=df_repeated_authors.fluidity_central.values / df_repeated_authors.graph_size.values,
-    x=df_repeated_authors.author.values,
-    name='fluidity central',
-    marker_color='#FF4136',
-    # boxpoints=False
-), row=2, col=1)
-fig.update_yaxes(title_text="fluidity total", row=1, col=1)
-fig.update_yaxes(title_text="fluidity central", row=2, col=1)
-fig.update_layout(height=750, width=750)
-fig.show()
-
-# ~~~~~~~~~~~~~~~ means together ~~~~~~~~~~~~~~~~~~~~~~~`
-fig = go.Figure(data=[
-    go.Bar(name='fluidity total',
-           x=df_repeated_authors_for_means['author'],
-           y=df_repeated_authors_for_means['fluidity_total']),
-    go.Bar(name='fluidity central',
-           x=df_repeated_authors_for_means['author'],
-           y=df_repeated_authors_for_means['fluidity_central']),
-    go.Bar(name='graph size',
-           x=df_repeated_authors_for_means['author'],
-           y=df_repeated_authors_for_means['graph_size']),
-    go.Bar(name='graph size',
-           x=df_repeated_authors_for_means['author'],
-           y=df_repeated_authors_for_means['central_graph_size']),
-])
-# Change the bar mode
-fig.update_layout(barmode='group')
-fig.show()
-
-# ~~~~~~~~~~~~~~~~~~ means togehter 2 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~`
-
-fig = go.Figure(data=[
-    go.Bar(name='fluidity total',
-           x=df_repeated_authors_for_means['author'],
-           y=df_repeated_authors_for_means['fluidity_total'] / df_repeated_authors_for_means['graph_size']),
-    go.Bar(name='fluidity central',
-           x=df_repeated_authors_for_means['author'],
-           y=df_repeated_authors_for_means['fluidity_central'] / df_repeated_authors_for_means['graph_size']),
-    # go.Bar(name='graph size',
-    # x=df_repeated_authors_for_means['author'],
-    # y=df_repeated_authors_for_means['graph_size']),
-    # go.Bar(name='central graph size',
-    #            x=df_repeated_authors_for_means['author'],
-    #            y=df_repeated_authors_for_means['central_graph_size']),
-])
-# Change the bar mode
-fig.update_layout(barmode='group')
-fig.show()
+def graph_size_distributions():
+    fig = make_subplots(rows=1, cols=3)
+    df_temp = df[
+        (df.graph_size > 0)
+        & (df.central_graph_size > -1)
+        & (df.central_graph_size <= 400)
+        ]
+    fig.add_trace(go.Histogram(
+        x=df_temp.graph_size.values,
+        name='graph size',
+        marker_color='#FF4136',
+        # marginal="rug"
+    ), col=1, row=1)
+    fig.add_trace(go.Histogram(
+        x=df_temp.central_graph_size.values,
+        name='central graph size',
+        marker_color='#FF851B',
+    ), col=2, row=1)
+    fig.add_trace(go.Histogram(
+        x=df_temp.graph_size_ratio.values,
+        name='graph size ratio',
+        marker_color='#3D9970',
+    ), col=3, row=1)
+    fig.update_xaxes(title_text='graph size', row=1, col=1)
+    fig.update_xaxes(title_text='central graph size', row=1, col=2)
+    fig.update_xaxes(title_text='ratio', row=1, col=3)
+    fig.update_yaxes(title_text='count', row=1, col=1)
+    fig.update_layout(
+        font=dict(
+            size=10
+        ),
+        showlegend=False,
+        paper_bgcolor='rgba(0,0,0,0)',
+        plot_bgcolor='rgba(0,0,0,0)'
+    )
+    fig.update_yaxes(zeroline=True, zerolinecolor='LightGrey', zerolinewidth=.1, showline=True, linecolor='Grey',
+                     showgrid=True, gridwidth=.1, gridcolor='White')
+    fig.update_xaxes(showline=True, linecolor='Grey')
+    fig.write_image("./images/graph_size_distributions.pdf")
+    fig.show()
 
 
-# ~~~~~~~~~~~~ authors means separated ~~~~~~~~~~~~~~~~~~~~~~~~~~
+def graph_size_box_plots():
+    # can make them Violin add Violin and remove box...
+    df_size = df[(df.graph_size > 0)
+                 & (df.central_graph_size > -1)
+                 & (df.central_graph_size <= 400)].copy()
+    fig = make_subplots(rows=1, cols=3)
+    fig.add_trace(go.Box(
+        y=df_size.graph_size.values,
+        name='graph size',
+        marker_color='#FF4136',
+        boxmean='sd',  # represent mean and standard deviation
+        boxpoints='all',
+        hovertext=df_size.name,
+        jitter=0.3,
+        marker_size=2,
+        line_width=1
+    ), col=1, row=1)
+    fig.add_trace(go.Box(
+        y=df_size.central_graph_size.values,
+        name='central graph size',
+        marker_color='#FF851B',
+        boxmean='sd',  # represent mean and standard deviation
+        boxpoints='all',
+        hovertext=df_size.name,
+        jitter=0.3,
+        marker_size=2,
+        line_width=1
+    ), col=2, row=1)
+    fig.add_trace(go.Box(
+        y=df_size.graph_size_ratio.values,
+        name='graph size ratio',
+        marker_color='#3D9970',
+        boxmean='sd',  # represent mean and standard deviation
+        boxpoints='all',
+        hovertext=df_size.name,
+        jitter=0.3,
+        marker_size=2,
+        line_width=1
+    ), col=3, row=1)
+    fig.update_layout(
+        font=dict(
+            size=10
+        ),
+        showlegend=False,
+        paper_bgcolor='rgba(0,0,0,0)',
+        plot_bgcolor='rgba(0,0,0,0)'
+    )
+    fig.update_yaxes(zeroline=True, zerolinecolor='LightGrey', zerolinewidth=.1, showline=True, linecolor='Grey',
+                     showgrid=True, gridwidth=.1, gridcolor='LightGrey')
+    fig.update_xaxes(showline=True, linecolor='Grey')
+    fig.write_image("./images/graph_size_box_plots.pdf")
+    return fig
+
+
 def graph_size_and_authors_mean():
     df_repeated_authors = RelationAnalyses.select_repeated(df, 'author', 50)
     df_repeated_authors = df_repeated_authors[
@@ -142,7 +120,7 @@ def graph_size_and_authors_mean():
                          texttemplate="%{y:.2f}",
                          ),
                   row=1, col=2)
-    fig.add_hline(y=df_repeated_authors_for_means['popularity'].mean(),
+    fig.add_hline(y=df['popularity'].mean(),
                   line_color='Black', line_dash='dash', line_width=0.5,
                   row=1, col=2)
     fig.add_trace(go.Bar(name='fluidity total',
@@ -153,7 +131,7 @@ def graph_size_and_authors_mean():
                          texttemplate="%{y:.2f}",
                          ),
                   row=2, col=2)
-    fig.add_hline(y=df_repeated_authors_for_means['fluidity_total'].mean(),
+    fig.add_hline(y=df['fluidity_total'].mean(),
                   line_color='Black', line_dash='dash', line_width=0.5,
                   row=2, col=2)
     fig.add_trace(go.Bar(name='fluidity central',
@@ -164,7 +142,7 @@ def graph_size_and_authors_mean():
                          texttemplate="%{y:.2f}"
                          ),
                   row=3, col=2)
-    fig.add_hline(y=df_repeated_authors_for_means['fluidity_central'].mean(),
+    fig.add_hline(y=df['fluidity_central'].mean(),
                   line_color='Black', line_dash='dash', line_width=0.5,
                   row=3, col=2)
     fig.add_trace(go.Bar(name='graph size',
@@ -175,7 +153,7 @@ def graph_size_and_authors_mean():
                          texttemplate="%{y:.2f}"
                          ),
                   row=1, col=1)
-    fig.add_hline(y=df_repeated_authors_for_means['graph_size'].mean(),
+    fig.add_hline(y=df['graph_size'].mean(),
                   line_color='Black', line_dash='dash', line_width=0.5,
                   row=1, col=1)
     fig.add_trace(go.Bar(name='central graph size',
@@ -186,7 +164,7 @@ def graph_size_and_authors_mean():
                          texttemplate="%{y:.2f}"
                          ),
                   row=2, col=1)
-    fig.add_hline(y=df_repeated_authors_for_means['central_graph_size'].mean(),
+    fig.add_hline(y=df['central_graph_size'].mean(),
                   line_color='Black', line_dash='dash', line_width=0.5,
                   row=2, col=1)
     fig.add_trace(go.Bar(name='ratio',
@@ -197,7 +175,7 @@ def graph_size_and_authors_mean():
                          texttemplate="%{y:.2f}"
                          ),
                   row=3, col=1)
-    fig.add_hline(y=df_repeated_authors_for_means['graph_size_ratio'].mean(),
+    fig.add_hline(y=df['graph_size_ratio'].mean(),
                   line_color='Black', line_dash='dash', line_width=0.5,
                   row=3, col=1)
     fig.update_yaxes(title_text="graph size", showticklabels=False, row=1, col=1)
@@ -222,11 +200,14 @@ def graph_size_and_authors_mean():
     fig.write_image("./images/graph_size_and_authors_mean.pdf")
 
 
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ box plots authors ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 def graph_size_authors_box():
-    df_repeated_authors = RelationAnalyses.select_repeated(df, 'author', 0)
+    df_repeated_authors = df.copy()
+    df_repeated_authors = RelationAnalyses.get_rows_with_list_key_values(df_repeated_authors,
+                                                                         'subjects_list_separated',
+                                                                         ['Fiction'])
+    df_repeated_authors = RelationAnalyses.select_repeated(df_repeated_authors, 'author', 40)
     df_repeated_authors = df_repeated_authors[
-        (df_repeated_authors.graph_size > -1) & (df_repeated_authors.central_graph_size) > 0]
+        (df_repeated_authors.graph_size > -1) & (df_repeated_authors.central_graph_size > 0)]
     fig = make_subplots(rows=3, cols=1, shared_xaxes=True,
                         vertical_spacing=0.05)
     fig.add_trace(go.Box(
@@ -267,11 +248,76 @@ def graph_size_authors_box():
                      showgrid=True, gridwidth=.1, gridcolor='LightGrey')
     fig.update_xaxes(showline=True, linecolor='Grey')
     fig.write_image("./images/graph_size_and_authors_box.pdf")
-
+    fig.update_layout(height=750, width=750)
     fig.show()
 
 
-# ~~~~~~~~~~~~~~~~~~~ category community ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+def graph_size_authors_box_with_popularity():
+    df_repeated_authors = df.copy()
+    df_repeated_authors = RelationAnalyses.get_rows_with_list_key_values(df_repeated_authors,
+                                                                         'subjects_list_separated',
+                                                                         ['Fiction'])
+    df_repeated_authors = RelationAnalyses.select_repeated(df_repeated_authors, 'author', 40)
+    df_repeated_authors = df_repeated_authors[
+        (df_repeated_authors.graph_size > -1) & (df_repeated_authors.central_graph_size > 0)]
+    fig = make_subplots(rows=3, cols=1, shared_xaxes=True,
+                        vertical_spacing=0.05)
+    fig.add_trace(go.Box(
+        y=df_repeated_authors.graph_size.values,
+        x=df_repeated_authors.author.values,
+        name='graph size',
+        marker_color='#3D9970',
+        boxmean=True
+        # boxpoints=False
+    ), row=1, col=1)
+    # fig.add_trace(go.Box(
+    #     y=df_repeated_authors.central_graph_size.values,
+    #     x=df_repeated_authors.author.values,
+    #     name='central graph size',
+    #     marker_color='#FF4136',
+    #     boxmean=True
+    #     # boxpoints=False
+    # ), row=2, col=1)
+    fig.add_trace(go.Box(
+        y=df_repeated_authors.graph_size_ratio.values,
+        x=df_repeated_authors.author.values,
+        name='ratio',
+        marker_color='#FF851B',
+        boxmean=True
+        # boxpoints=False
+    ), row=2, col=1)
+    fig.add_trace(go.Bar(
+        y=df_repeated_authors.groupby('author').mean().reset_index().popularity.values,
+        x=df_repeated_authors.groupby('author').mean().reset_index().author.values,
+        name='popularity',
+        marker_color='mediumpurple',
+        # boxpoints=False
+        width=[.5 for _ in range(len(df_repeated_authors.groupby('author').mean().reset_index().author.values))]
+    ), row=3, col=1)
+    fig.update_yaxes(title_text="number of characters", row=1, col=1)
+    # fig.update_yaxes(title_text="number of central characters", row=2, col=1)
+    fig.update_yaxes(title_text="ratio", row=2, col=1)
+    fig.update_yaxes(title_text="popularity", row=3, col=1)
+
+    # fig.update_layout(height=1500, width=750)
+
+    fig.update_layout(
+        font=dict(
+            size=8
+        ),
+        showlegend=False,
+        paper_bgcolor='rgba(0,0,0,0)',
+        plot_bgcolor='rgba(0,0,0,0)'
+    )
+    fig.update_yaxes(zeroline=True, zerolinecolor='LightGrey', zerolinewidth=.1, showline=True, linecolor='Grey',
+                     showgrid=True, gridwidth=.1, gridcolor='LightGrey')
+    fig.update_xaxes(showline=True, linecolor='Grey')
+    fig.update_layout(height=500, width=500)
+    fig.write_image("./images/graph_size_authors_box_with_popularity.pdf")
+
+    return fig
+
+
 def graph_size_category_community():
     # not used yet
     df_cats = RelationAnalyses.select_repeated(df, 'category_community', 100)
@@ -328,26 +374,29 @@ def graph_size_category_community():
     fig.update_yaxes(title_text="fluidity central", showticklabels=False, row=3, col=2)
 
 
-# ~~~~~~~~~~~~ tags ~~~~~~~~~~~~~~~~~~~~~~~~~~
 def graph_size_and_tags():
-    # tags = RelationAnalyses.get_all_subjects(df, 'subjects_list_separated')
-    # df_tags = RelationAnalyses.get_subjects_as_tags(df, 'subjects_list_separated', [a[0] for a in tags if a[1] > 20])
-    df_tags = RelationAnalyses.get_subjects_as_tags(df, 'subjects_list_separated', ['Biography',
-                                                                                    'History',
-                                                                                    'Juvenile fiction',
-                                                                                    'Science fiction',
-                                                                                    'Fantasy fiction'
-                                                                                    'Juvenile literature',
-                                                                                    'Love stories',
-                                                                                    'Drama',
-                                                                                    'Detective and mystery stories',
-                                                                                    'Short stories',
-                                                                                    'Poetry',
-                                                                                    'History',
-                                                                                    'Bildungsromans'
-                                                                                    'Historical fiction',
-                                                                                    'Fiction'])
-    # df_tags = RelationAnalyses.get_subjects_as_tags(RelationAnalyses.get_rows_with_list_key_values(df,'subjects_list_separated',['Fiction']),'subjects_list_separated',[a[0] for a in tags if a[1]>30])
+    df_tags = df.copy()
+    # df_tags= RelationAnalyses.get_rows_with_list_key_values(df, 'subjects_list_separated', ['Fiction'])
+
+    selected_tags = ['Biography',
+                     'History',
+                     'Juvenile fiction',
+                     'Science fiction',
+                     'Fantasy fiction'
+                     'Juvenile literature',
+                     'Love stories',
+                     'Drama',
+                     'Detective and mystery stories',
+                     'Short stories',
+                     'Poetry',
+                     'History',
+                     'Bildungsromans'
+                     'Historical fiction',
+                     'Fiction']
+    df_tags = RelationAnalyses.get_subjects_as_tags(df_tags, 'subjects_list_separated', selected_tags)
+
+    df_tags = RelationAnalyses.get_repeated_subjects_as_tags(df_tags, 'subjects_list_separated', 10)
+
     df_tags = df_tags[
         (df_tags.graph_size > -1) & (df_tags.central_graph_size) > 0]
     df_tags_for_means = df_tags.groupby('tag').mean().reset_index().sort_values(by='graph_size', ascending=False)
@@ -374,12 +423,12 @@ def graph_size_and_tags():
                          x=df_tags_for_means['tag'],
                          y=df_tags_for_means['graph_size'],
                          text=df_tags_for_means['graph_size'],
-                         width=[.5 for _ in range(len(df_tags_for_means['graph_size']))]
+                         width=[.5 for _ in range(len(df_tags_for_means['graph_size']))],
                          # textposition='auto',
                          # texttemplate="%{y:.2f}"
                          ),
                   row=1, col=1)
-    fig.add_hline(y=df_tags_for_means['graph_size'].mean(), line_color='Black', line_dash='dash', line_width=0.5, row=1,
+    fig.add_hline(y=df['graph_size'].mean(), line_color='Black', line_dash='dash', line_width=0.5, row=1,
                   col=1)
     fig.add_trace(go.Bar(name='central graph size',
                          x=df_tags_for_means['tag'],
@@ -390,7 +439,7 @@ def graph_size_and_tags():
                          # texttemplate="%{y:.2f}"
                          ),
                   row=2, col=1)
-    fig.add_hline(y=df_tags_for_means['central_graph_size'].mean(), line_color='Black', line_dash='dash',
+    fig.add_hline(y=df['central_graph_size'].mean(), line_color='Black', line_dash='dash',
                   line_width=0.5, row=2, col=1)
     fig.add_trace(go.Bar(name='ratio',
                          x=df_tags_for_means['tag'],
@@ -401,7 +450,7 @@ def graph_size_and_tags():
                          # texttemplate="%{y:.2f}",
                          ),
                   row=3, col=1)
-    fig.add_hline(y=df_tags_for_means['graph_size_ratio'].mean(), line_color='Black', line_dash='dash', line_width=0.5,
+    fig.add_hline(y=df['graph_size_ratio'].mean(), line_color='Black', line_dash='dash', line_width=0.5,
                   row=3, col=1)
     fig.update_yaxes(title_text="graph size", showticklabels=True, row=1, col=1)
     fig.update_yaxes(title_text="central graph size", showticklabels=True, row=2, col=1)
@@ -424,7 +473,70 @@ def graph_size_and_tags():
     fig.write_image("./images/graph_size_and_tags.pdf")
 
 
-# ~~~~~~~~~~~~~~~~~~ similarity community ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~`
+def graph_size_and_tags_box():
+    # df_tags = RelationAnalyses.get_repeated_subjects_as_tags(df, 'subjects_list_separated', 10)
+    df_tags = RelationAnalyses.get_subjects_as_tags(df, 'subjects_list_separated', ['Biography',
+                                                                                    'History',
+                                                                                    'Juvenile fiction',
+                                                                                    'Science fiction',
+                                                                                    'Fantasy fiction'
+                                                                                    'Juvenile literature',
+                                                                                    'Love stories',
+                                                                                    'Drama',
+                                                                                    'Detective and mystery stories',
+                                                                                    'Short stories',
+                                                                                    'Poetry',
+                                                                                    'History',
+                                                                                    'Bildungsromans'
+                                                                                    'Historical fiction',
+                                                                                    'Fiction'])
+
+    df_tags = df_tags[
+        (df_tags.graph_size > -1) & (df_tags.central_graph_size) > 0]
+    fig = make_subplots(rows=3, cols=1, shared_xaxes=True,
+                        vertical_spacing=0.05)
+    fig.add_trace(go.Box(
+        y=df_tags.graph_size.values,
+        x=df_tags.tag.values,
+        name='graph size',
+        marker_color='#3D9970',
+        # boxpoints=False
+    ), row=1, col=1)
+    fig.add_trace(go.Box(
+        y=df_tags.central_graph_size.values,
+        x=df_tags.tag.values,
+        name='central graph size',
+        marker_color='#FF4136',
+        # boxpoints=False
+    ), row=2, col=1)
+    fig.add_trace(go.Box(
+        y=df_tags.graph_size_ratio.values,
+        x=df_tags.tag.values,
+        name='ratio',
+        marker_color='#FF851B',
+        # boxpoints=False
+    ), row=3, col=1)
+    fig.update_yaxes(title_text="number of characters", row=1, col=1)
+    fig.update_yaxes(title_text="number of central characters", row=2, col=1)
+    fig.update_yaxes(title_text="ratio", row=3, col=1)
+    # fig.update_layout(height=1500, width=750)
+
+    fig.update_layout(
+        font=dict(
+            size=8
+        ),
+        showlegend=False,
+        paper_bgcolor='rgba(0,0,0,0)',
+        plot_bgcolor='rgba(0,0,0,0)'
+    )
+    fig.update_yaxes(zeroline=True, zerolinecolor='LightGrey', zerolinewidth=.1, showline=True, linecolor='Grey',
+                     showgrid=True, gridwidth=.1, gridcolor='LightGrey')
+    fig.update_xaxes(showline=True, linecolor='Grey')
+    fig.write_image("./images/graph_size_and_tags_box.pdf")
+
+    return fig
+
+
 def graph_size_for_similarity_commmunity():
     df_cats = RelationAnalyses.select_repeated(df, 'similarity_community', 1000)
     df_cats = df_cats[
@@ -442,7 +554,7 @@ def graph_size_for_similarity_commmunity():
                          width=[.5 for _ in range(len(df_cats_for_means['graph_size_ratio']))]
                          ),
                   row=1, col=1)
-    fig.add_hline(y=df_cats_for_means['graph_size'].mean(), line_color='Grey', line_dash='dash', row=1, col=1)
+    fig.add_hline(y=df['graph_size'].mean(), line_color='Grey', line_dash='dash', row=1, col=1)
     fig.add_trace(go.Bar(name='central graph size',
                          x=[str(a) for a in df_cats_for_means['similarity_community']],
                          y=df_cats_for_means['central_graph_size'],
@@ -452,7 +564,7 @@ def graph_size_for_similarity_commmunity():
                          width=[.5 for _ in range(len(df_cats_for_means['graph_size_ratio']))]
                          ),
                   row=1, col=2)
-    fig.add_hline(y=df_cats_for_means['central_graph_size'].mean(), line_color='Grey', line_dash='dash', row=1, col=2)
+    fig.add_hline(y=df['central_graph_size'].mean(), line_color='Grey', line_dash='dash', row=1, col=2)
     fig.add_trace(go.Bar(name='ratio',
                          x=[str(a) for a in df_cats_for_means['similarity_community']],
                          y=df_cats_for_means['graph_size_ratio'],
@@ -479,7 +591,7 @@ def graph_size_for_similarity_commmunity():
     #                      ),
     #               row=3, col=2)
 
-    fig.add_hline(y=df_cats_for_means['graph_size_ratio'].mean(), line_color='Grey', line_dash='dash', row=1, col=3)
+    fig.add_hline(y=df['graph_size_ratio'].mean(), line_color='Grey', line_dash='dash', row=1, col=3)
     fig.update_yaxes(title_text="graph size", showticklabels=False, row=1, col=1)
     fig.update_yaxes(title_text="central graph size", showticklabels=False, row=1, col=2)
     fig.update_yaxes(title_text="ratio", showticklabels=False, row=1, col=3)
@@ -504,7 +616,130 @@ def graph_size_for_similarity_commmunity():
     return fig
 
 
-# ----------------------------- similarity_category_plain ------------------------------------
+def character_importance_and_tags():
+    df_tags = df.copy()
+    # df_tags= RelationAnalyses.get_rows_with_list_key_values(df, 'subjects_list_separated', ['Fiction'])
+
+    selected_tags = ['Biography',
+                     'History',
+                     'Juvenile fiction',
+                     'Science fiction',
+                     'Fantasy fiction'
+                     'Juvenile literature',
+                     'Love stories',
+                     'Drama',
+                     'Detective and mystery stories',
+                     'Short stories',
+                     'Poetry',
+                     'History',
+                     'Bildungsromans'
+                     'Historical fiction',
+                     'Fiction']
+    df_tags = RelationAnalyses.get_subjects_as_tags(df_tags, 'subjects_list_separated', selected_tags)
+
+    df_tags = RelationAnalyses.get_repeated_subjects_as_tags(df_tags, 'subjects_list_separated', 10)
+
+    df_tags = df_tags[
+        (df_tags.main_character_importance > -1) & (df_tags.second_character_importance > 0)]
+    df_tags_for_means = df_tags.groupby('tag').mean().reset_index().sort_values(by='main_character_importance', ascending=False)
+
+    fig = make_subplots(rows=2, cols=1, shared_xaxes=True,
+                        vertical_spacing=0.05)
+    fig.add_trace(go.Bar(name='main character importance',
+                         x=df_tags_for_means['tag'],
+                         y=df_tags_for_means['main_character_importance'],
+                         text=df_tags_for_means['main_character_importance'],
+                         width=[.5 for _ in range(len(df_tags_for_means['main_character_importance']))],
+                         # textposition='auto',
+                         # texttemplate="%{y:.2f}"
+                         ),
+                  row=1, col=1)
+    fig.add_hline(y=df['main_character_importance'].mean(), line_color='Black', line_dash='dash', line_width=0.5, row=1,
+                  col=1)
+    fig.add_trace(go.Bar(name='second character importance',
+                         x=df_tags_for_means['tag'],
+                         y=df_tags_for_means['second_character_importance'],
+                         text=df_tags_for_means['second_character_importance'],
+                         width=[.5 for _ in range(len(df_tags_for_means['second_character_importance']))]
+                         # textposition='auto',
+                         # texttemplate="%{y:.2f}"
+                         ),
+                  row=2, col=1)
+    fig.add_hline(y=df['second_character_importance'].mean(), line_color='Black', line_dash='dash',
+                  line_width=0.5, row=2, col=1)
+    fig.update_yaxes(title_text="main character importance", showticklabels=True, row=1, col=1)
+    fig.update_yaxes(title_text="second character importance", showticklabels=True, row=2, col=1)
+
+    fig.update_layout(
+        font=dict(
+            size=8
+        ),
+        showlegend=False,
+        paper_bgcolor='rgba(0,0,0,0)',
+        plot_bgcolor='rgba(0,0,0,0)'
+    )
+    fig.update_yaxes(zeroline=True, zerolinecolor='LightGrey', zerolinewidth=.1, showline=True, linecolor='Grey',
+                     showgrid=True, gridwidth=.1, gridcolor='LightGrey')
+    fig.update_xaxes(showline=True, linecolor='Grey')
+    fig.write_image("./images/character_importance_and_tags.pdf")
+    return fig
+
+
+def character_importance_and_tags_box():
+    # df_tags = RelationAnalyses.get_repeated_subjects_as_tags(df, 'subjects_list_separated', 10)
+    df_tags = RelationAnalyses.get_subjects_as_tags(df, 'subjects_list_separated', ['Biography',
+                                                                                    'History',
+                                                                                    'Juvenile fiction',
+                                                                                    'Science fiction',
+                                                                                    'Fantasy fiction'
+                                                                                    'Juvenile literature',
+                                                                                    'Love stories',
+                                                                                    'Drama',
+                                                                                    'Detective and mystery stories',
+                                                                                    'Short stories',
+                                                                                    'Poetry',
+                                                                                    'History',
+                                                                                    'Bildungsromans'
+                                                                                    'Historical fiction',
+                                                                                    'Fiction'])
+
+    df_tags = df_tags[
+        (df_tags.main_character_importance > -1) & (df_tags.second_character_importance > 0)]
+    fig = make_subplots(rows=2, cols=1, shared_xaxes=True,
+                        vertical_spacing=0.05)
+    fig.add_trace(go.Box(
+        y=df_tags.main_character_importance.values,
+        x=df_tags.tag.values,
+        name='main character importance',
+        marker_color='#3D9970',
+        # boxpoints=False
+    ), row=1, col=1)
+    fig.add_trace(go.Box(
+        y=df_tags.second_character_importance.values,
+        x=df_tags.tag.values,
+        name='central graph size',
+        marker_color='#FF4136',
+        # boxpoints=False
+    ), row=2, col=1)
+    fig.update_yaxes(title_text="main character importance", row=1, col=1)
+    fig.update_yaxes(title_text="second character importance", row=2, col=1)
+    # fig.update_layout(height=1500, width=750)
+    fig.update_layout(
+        font=dict(
+            size=8
+        ),
+        showlegend=False,
+        paper_bgcolor='rgba(0,0,0,0)',
+        plot_bgcolor='rgba(0,0,0,0)'
+    )
+    fig.update_yaxes(zeroline=True, zerolinecolor='LightGrey', zerolinewidth=.1, showline=True, linecolor='Grey',
+                     showgrid=True, gridwidth=.1, gridcolor='LightGrey')
+    fig.update_xaxes(showline=True, linecolor='Grey')
+    fig.write_image("./images/character_importance_and_tags_box.pdf")
+
+    return fig
+
+
 def similarity_category_plain():
     df_similarity_category = df[(df.similarity_community == 21) | (df.similarity_community == 17)]
     df_similarity_category = df_similarity_category.groupby(
@@ -533,7 +768,6 @@ def similarity_category_plain():
     return fig
 
 
-# --------------------------------- similarity
 def category_community_counts():
     fig = px.bar(x=[str(a) for a in df[df.category_community != -1].groupby(['category_community']).size().reset_index(
         name='counts').sort_values(by='counts', ascending=False)['category_community']],
@@ -606,63 +840,6 @@ def author_similarity_counts():
     return fig
 
 
-# ---------------------------------
-
-
-def graph_size_box_plots():
-    # can make them Violin add Violin and remove box...
-    df_size = df[(df.graph_size > 0)
-                 & (df.central_graph_size > -1)
-                 & (df.central_graph_size <= 400)].copy()
-    fig = make_subplots(rows=1, cols=3)
-    fig.add_trace(go.Box(
-        y=df_size.graph_size.values,
-        name='graph size',
-        marker_color='#FF4136',
-        boxmean='sd',  # represent mean and standard deviation
-        boxpoints='all',
-        hovertext=df_size.name,
-        jitter=0.3,
-        marker_size=2,
-        line_width=1
-    ), col=1, row=1)
-    fig.add_trace(go.Box(
-        y=df_size.central_graph_size.values,
-        name='central graph size',
-        marker_color='#FF851B',
-        boxmean='sd',  # represent mean and standard deviation
-        boxpoints='all',
-        hovertext=df_size.name,
-        jitter=0.3,
-        marker_size=2,
-        line_width=1
-    ), col=2, row=1)
-    fig.add_trace(go.Box(
-        y=df_size.graph_size_ratio.values,
-        name='graph size ratio',
-        marker_color='#3D9970',
-        boxmean='sd',  # represent mean and standard deviation
-        boxpoints='all',
-        hovertext=df_size.name,
-        jitter=0.3,
-        marker_size=2,
-        line_width=1
-    ), col=3, row=1)
-    fig.update_layout(
-        font=dict(
-            size=10
-        ),
-        showlegend=False,
-        paper_bgcolor='rgba(0,0,0,0)',
-        plot_bgcolor='rgba(0,0,0,0)'
-    )
-    fig.update_yaxes(zeroline=True, zerolinecolor='LightGrey', zerolinewidth=.1, showline=True, linecolor='Grey',
-                     showgrid=True, gridwidth=.1, gridcolor='LightGrey')
-    fig.update_xaxes(showline=True, linecolor='Grey')
-    fig.write_image("./images/graph_size_box_plots.pdf")
-    return fig
-
-
 def author_book_counts():
     a0 = len(RelationAnalyses.select_repeated(df, 'author', 0).value_counts('author'))
     a1 = len(RelationAnalyses.select_repeated(df, 'author', 15).value_counts('author'))
@@ -693,45 +870,120 @@ def author_book_counts():
     return fig
 
 
-# ------------------ graph size distributions
-def graph_size_distributions():
-    fig = make_subplots(rows=1, cols=3)
-    df_temp = df[
-            (df.graph_size > 0)
-             & (df.central_graph_size > -1)
-             & (df.central_graph_size <= 400)
-             ]
-    fig.add_trace(go.Histogram(
-        x=df_temp.graph_size.values,
-        name='graph size',
-        marker_color='#FF4136',
-        # marginal="rug"
-    ), col=1, row=1)
-    fig.add_trace(go.Histogram(
-        x=df_temp.central_graph_size.values,
-        name='central graph size',
-        marker_color='#FF851B',
-    ), col=2, row=1)
-    fig.add_trace(go.Histogram(
-        x=df_temp.graph_size_ratio.values,
-        name='graph size ratio',
-        marker_color='#3D9970',
-    ), col=3, row=1)
-    fig.update_xaxes(title_text='graph size', row=1, col=1)
-    fig.update_xaxes(title_text='central graph size', row=1, col=2)
-    fig.update_xaxes(title_text='ratio', row=1, col=3)
-    fig.update_yaxes(title_text='count', row=1, col=1)
-    fig.update_layout(
-        font=dict(
-            size=10
-        ),
-        showlegend=False,
-        paper_bgcolor='rgba(0,0,0,0)',
-        plot_bgcolor='rgba(0,0,0,0)'
-    )
-    fig.update_yaxes(zeroline=True, zerolinecolor='LightGrey', zerolinewidth=.1, showline=True, linecolor='Grey',
-                     showgrid=True, gridwidth=.1, gridcolor='White')
-    fig.update_xaxes(showline=True, linecolor='Grey')
-    fig.write_image("./images/graph_size_distributions.pdf")
-    fig.show()
 
+# ~~~~~~~~~~~~~~~~~~~~~~ Authors ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+#
+# df_repeated_authors = RelationAnalyses.select_repeated(df, 'author', 50)
+# df_repeated_authors = df_repeated_authors[
+#     (df_repeated_authors.graph_size > -1) & (df_repeated_authors.central_graph_size) > 0]
+# df_repeated_authors_for_means = df_repeated_authors.groupby('author').mean().reset_index().sort_values(by='graph_size',
+#                                                                                                        ascending=False)
+# # ~~~~~~~~~ box plots together ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# fig = go.Figure()
+# fig.add_trace(go.Box(
+#     y=df_repeated_authors.graph_size.values,
+#     x=df_repeated_authors.author.values,
+#     name='graph_size',
+#     marker_color='#3D9970'
+# ))
+# fig.add_trace(go.Box(
+#     y=df_repeated_authors.central_graph_size.values,
+#     x=df_repeated_authors.author.values,
+#     name='central_graph_size',
+#     marker_color='#FF4136'
+# ))
+# fig.add_trace(go.Box(
+#     y=df_repeated_authors.graph_size_ratio.values,
+#     x=df_repeated_authors.author.values,
+#     name='ratio',
+#     marker_color='#FF851B'
+# ))
+# fig.update_layout(
+#     yaxis_title='size',
+#     boxmode='group'  # group together boxes of the different traces for each value of x
+# )
+# fig.show()
+
+# ~~~~~~~~~~~~~~~~~~~ Fluidity ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~```
+
+# fig = make_subplots(rows=2, cols=1, shared_xaxes=True,
+#                     vertical_spacing=0.05)
+# fig.add_trace(go.Box(
+#     y=df_repeated_authors.fluidity_total.values,
+#     x=df_repeated_authors.author.values,
+#     name='fluidity total',
+#     marker_color='#3D9970',
+#     # boxpoints=False
+# ), row=1, col=1)
+# fig.add_trace(go.Box(
+#     y=df_repeated_authors.fluidity_central.values,
+#     x=df_repeated_authors.author.values,
+#     name='fluidity central',
+#     marker_color='#FF4136',
+#     # boxpoints=False
+# ), row=2, col=1)
+# fig.update_yaxes(title_text="fluidity total", row=1, col=1)
+# fig.update_yaxes(title_text="fluidity central", row=2, col=1)
+# fig.update_layout(height=750, width=750)
+# fig.show()
+#
+# # ~~~~~~~~~~~~~ Normalized fluidity ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# fig = make_subplots(rows=2, cols=1, shared_xaxes=True,
+#                     vertical_spacing=0.05)
+# fig.add_trace(go.Box(
+#     y=df_repeated_authors.fluidity_total.values / df_repeated_authors.graph_size.values,
+#     x=df_repeated_authors.author.values,
+#     name='fluidity total',
+#     marker_color='#3D9970',
+#     # boxpoints=False
+# ), row=1, col=1)
+# fig.add_trace(go.Box(
+#     y=df_repeated_authors.fluidity_central.values / df_repeated_authors.graph_size.values,
+#     x=df_repeated_authors.author.values,
+#     name='fluidity central',
+#     marker_color='#FF4136',
+#     # boxpoints=False
+# ), row=2, col=1)
+# fig.update_yaxes(title_text="fluidity total", row=1, col=1)
+# fig.update_yaxes(title_text="fluidity central", row=2, col=1)
+# fig.update_layout(height=750, width=750)
+# fig.show()
+#
+# # ~~~~~~~~~~~~~~~ means together ~~~~~~~~~~~~~~~~~~~~~~~`
+# fig = go.Figure(data=[
+#     go.Bar(name='fluidity total',
+#            x=df_repeated_authors_for_means['author'],
+#            y=df_repeated_authors_for_means['fluidity_total']),
+#     go.Bar(name='fluidity central',
+#            x=df_repeated_authors_for_means['author'],
+#            y=df_repeated_authors_for_means['fluidity_central']),
+#     go.Bar(name='graph size',
+#            x=df_repeated_authors_for_means['author'],
+#            y=df_repeated_authors_for_means['graph_size']),
+#     go.Bar(name='graph size',
+#            x=df_repeated_authors_for_means['author'],
+#            y=df_repeated_authors_for_means['central_graph_size']),
+# ])
+# # Change the bar mode
+# fig.update_layout(barmode='group')
+# fig.show()
+#
+# # ~~~~~~~~~~~~~~~~~~ means togehter 2 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~`
+#
+# fig = go.Figure(data=[
+#     go.Bar(name='fluidity total',
+#            x=df_repeated_authors_for_means['author'],
+#            y=df_repeated_authors_for_means['fluidity_total'] / df_repeated_authors_for_means['graph_size']),
+#     go.Bar(name='fluidity central',
+#            x=df_repeated_authors_for_means['author'],
+#            y=df_repeated_authors_for_means['fluidity_central'] / df_repeated_authors_for_means['graph_size']),
+#     # go.Bar(name='graph size',
+#     # x=df_repeated_authors_for_means['author'],
+#     # y=df_repeated_authors_for_means['graph_size']),
+#     # go.Bar(name='central graph size',
+#     #            x=df_repeated_authors_for_means['author'],
+#     #            y=df_repeated_authors_for_means['central_graph_size']),
+# ])
+# # Change the bar mode
+# fig.update_layout(barmode='group')
+# fig.show()

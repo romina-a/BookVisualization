@@ -232,7 +232,7 @@ def plot_count_by_time_for_character(G, character_name, num_of_snapshots):
     plt.show()
 
 
-def plot_topk_pagerank_history(G, num_of_snapshots, k):
+def plot_topk_pagerank_history(G, num_of_snapshots, k, save_adr=None):
     """
     returns topk most important characters and plots their pagerank through time
     :param G:
@@ -247,6 +247,8 @@ def plot_topk_pagerank_history(G, num_of_snapshots, k):
         plt.ylabel('Page Rank')
         plt.xlabel('time')
     plt.legend()
+    if save_adr is not None:
+        plt.savefig(save_adr)
     plt.show()
 
 
@@ -307,7 +309,7 @@ def draw_graph_through_time(G, num_of_snapshots, pagerank_threshold=0.5):
         importants = importants.union(set(dict(find_central_characters(snap, pagerank_threshold))))
     for i, snap in enumerate(snaps):
         DrawGraph.draw_graph_plotly(snap.subgraph(importants),
-                                    save_adr=f"./graph{i + 1}.png", show=False)
+                                    save_adr=f"./graph{i + 1}.pdf", show=False)
 
 
 # ~~~~~~~~~~~~~~~~ information already in graph ~~~~~~~~~~~~~~~~~~~~~~~

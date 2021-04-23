@@ -164,6 +164,7 @@ def draw_graph_plotly(G, graph_title="",
     fig.update_layout(showlegend=False)
     fig.update_xaxes(showticklabels=False)
     fig.update_yaxes(showticklabels=False)
+    fig.update_layout(font=dict(size=6))
     if save_adr is not None:
         fig.write_image(save_adr)
     if show:

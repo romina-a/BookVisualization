@@ -16,6 +16,10 @@ BookVisualization
     ├── ExtractNames
     │   └── get_character_names_stanford_server: Method to extract names from text
     │  
+    ├── Category Extraction: Used to get metadata subjects of the books
+    │   
+    ├── Category Graph: Used to find book category communities
+    │   
     └── README.md
 
 

@@ -8,3 +8,5 @@ __pycache__
 stanford-*
 SavedGraphs
 SavedGraph
+images
+images/*
